@@ -212,6 +212,26 @@ Before doing anything, read:
   - Applied to profile edit page (personal + emergency phone)
   - Numbers stored in full international format (e.g., +233241234567)
 - DONE (post-launch): Profile photo required at registration (was optional)
+- DONE (post-launch): Bottom tab bar redesign (dark green bg, gold active pill, shadow lift)
+  - Icons: cream at 70% opacity (inactive), gold with pill highlight (active)
+  - Tap feedback: active:scale-95, labels bumped to 11px
+- DONE (post-launch): Notification badge system (red dots on tabs for new content)
+  - SQL: supabase/create-notification-badges.sql (ACTION REQUIRED: run in Supabase SQL Editor)
+  - Hook: src/hooks/use-badge-notifications.ts
+  - Timestamp comparison approach: content_updates + user_section_reads tables
+  - Auto-clear on page visit, dots on both mobile tabs and desktop sidebar
+- DONE (post-launch): Questions page redesign
+  - Single unified list (no Pending/Answered split)
+  - Left border color: green = answered, amber = pending
+  - Answer preview in collapsed state
+  - Indented threading with leadership shield badges
+- DONE (post-launch): Toast notifications (Sonner) on all key actions
+  - Toaster added to dashboard layout (top-center, richColors)
+  - Added to: admin approval, announcements, questions, welfare, profile, payments
+- DONE (post-launch): Service worker for shell caching + offline fallback
+  - public/sw.js: cache-first for static assets, network-first for pages
+  - src/app/offline/page.tsx: branded offline fallback page
+  - src/components/sw-register.tsx: registers SW on page load
 
 ### ALL 9 PHASES COMPLETE - APP IS LIVE
 

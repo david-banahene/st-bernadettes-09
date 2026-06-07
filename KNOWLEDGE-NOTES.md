@@ -257,4 +257,114 @@ feels faster than a page that shows nothing for 1.5s then appears fully loaded.
 
 ---
 
+## 13. Bottom Tab Bar: Make It Unmissable
+
+**What we learned:** A white bottom tab bar blends into the page content.
+Members did not realize navigation was there. Research shows the single
+highest-impact change is switching to a colored background.
+
+**Premium pattern (Material Design 3 / Instagram / WhatsApp 2025-2026):**
+- Dark brand-color background (our dark green #1B4332)
+- Cream/white icons at 70% opacity for inactive tabs
+- Gold pill-shaped highlight behind the active tab icon
+- Shadow to lift the bar off the page: `shadow-[0_-2px_10px_rgba(0,0,0,0.15)]`
+- Tap feedback: `active:scale-95 transition-all duration-200`
+- Label size: at least 11px (10px is too small for readability)
+- WCAG contrast: dark green on cream = 11:1 ratio (exceeds AAA)
+
+**Sources:**
+- Material Design 3: https://m3.material.io/components/navigation-bar/overview
+- Mobbin Tab Bar Best Practices: https://mobbin.com/glossary/tab-bar
+
+---
+
+## 14. In-App Notification Badges (Red Dots)
+
+**What we learned:** Without notification indicators, members have no way to
+know something new happened unless they manually open every page. A simple
+red dot on the tab icon solves this.
+
+**Lightweight approach (timestamp comparison, not a full notifications table):**
+- `content_updates` table: one row per section, stores last_updated_at
+- `user_section_reads` table: one row per user per section, stores last_read_at
+- Badge shows when last_updated_at > last_read_at
+- Database triggers auto-bump content_updates when new rows are inserted
+- Dot auto-clears when user visits the page (upsert their last_read_at)
+
+**Visual design:**
+- 10px red dot, positioned top-right of the icon
+- White ring border for contrast: `ring-2 ring-white` (or ring-sb-green-dark on dark bg)
+- Use dots, not count badges, for section-level indicators (~50 members)
+
+**Why not a full notifications table:** For 50 members with moderate activity,
+counts add clutter without value. The timestamp approach uses two tiny tables
+instead of potentially thousands of notification rows.
+
+**SQL file:** `supabase/create-notification-badges.sql`
+**Hook:** `src/hooks/use-badge-notifications.ts`
+
+---
+
+## 15. Questions Page: Single List with Threading
+
+**What we learned:** Splitting questions into "Pending" and "Answered" sections
+forces users to scan two places. Slack's design team found that a single
+chronological list with visual status indicators is more usable.
+
+**Key changes:**
+- One list sorted newest first (no Pending/Answered sections)
+- Left border color codes status: green = answered, amber = pending
+- Answer preview in collapsed state: "Leadership: Lets pay say 50 cedis..."
+- Expanded view: answers indented with left border (`ml-4 pl-3 border-l-2`)
+- Shield icon + name badge on responses to distinguish leadership replies
+- Single accordion: only one card expanded at a time
+
+**Sources:**
+- Slack Design: https://slack.design/articles/threads-in-slack-a-long-design-journey-part-2-of-2/
+
+---
+
+## 16. Toast Notifications (Sonner)
+
+**What we learned:** When a user performs an action (approve member, post
+announcement, confirm payment), there should be instant visual feedback.
+Without it, users click buttons multiple times or wonder if anything happened.
+
+**Implementation:**
+- Library: Sonner (shadcn/ui standard, under 5KB)
+- Position: `top-center` with `richColors` prop
+- Usage: `toast.success("Member approved")` or `toast.error("Failed")`
+- Add to every action handler across the dashboard
+- The `<Toaster>` component goes in the dashboard layout
+
+**Rule:** Every user-triggered action should produce a toast. Success toasts
+disappear automatically. Error toasts stay until dismissed.
+
+**Component:** Already included with shadcn/ui at `src/components/ui/sonner.tsx`
+
+---
+
+## 17. Service Worker (Offline + Fast Repeat Loads)
+
+**What we learned:** On slow mobile networks (common in Ghana), repeat visits
+to the app felt slow because every asset was re-downloaded. A service worker
+caches the app shell (JS, CSS, fonts) so repeat loads are instant.
+
+**Strategy:**
+- Cache-first for static assets (JS, CSS, fonts, images)
+- Network-first for navigation (pages) with offline fallback
+- Skip API calls and Supabase requests (always network)
+- Pre-cache the offline fallback page on install
+- `skipWaiting()` + `clients.claim()` for immediate activation
+
+**Files:**
+- `public/sw.js` (the service worker)
+- `src/components/sw-register.tsx` (registers the SW on page load)
+- `src/app/offline/page.tsx` (branded offline fallback page)
+
+**Cache versioning:** Change `CACHE_NAME` when you need to bust the cache.
+Old caches are automatically cleaned up on activation.
+
+---
+
 *Last updated: June 2026*
