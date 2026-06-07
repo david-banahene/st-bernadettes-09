@@ -108,6 +108,21 @@ export default function AdminEventsPage() {
       return;
     }
 
+    // Send email notification to all active members
+    try {
+      await fetch("/api/email/new-event", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          eventTitle: formData.get("title") as string,
+          eventDate: formData.get("eventDate") as string,
+          location: formData.get("location") as string,
+        }),
+      });
+    } catch {
+      // Email failure should not block event creation
+    }
+
     setSuccess(true);
     setLoading(false);
     setTimeout(() => {

@@ -135,6 +135,21 @@ export default function WelfarePage() {
       })
       .eq("id", requestId);
 
+    // Send email notification to the member about the decision
+    try {
+      await fetch("/api/email/welfare-decision", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          requestId,
+          decision,
+          notes: reviewNote || null,
+        }),
+      });
+    } catch {
+      // Email failure should not block the review
+    }
+
     setReviewNote("");
     setReviewing(null);
     await loadData();

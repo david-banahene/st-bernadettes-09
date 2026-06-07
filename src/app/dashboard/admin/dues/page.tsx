@@ -111,6 +111,10 @@ export default function DuesPage() {
   async function confirmPayment(duesId: string) {
     setConfirming(duesId);
     const supabase = createClient();
+
+    // Find which member this dues record belongs to
+    const duesRecord = dues.find((d) => d.id === duesId);
+
     await supabase
       .from("monthly_dues")
       .update({
@@ -118,6 +122,22 @@ export default function DuesPage() {
         paid_at: new Date().toISOString(),
       })
       .eq("id", duesId);
+
+    // Send email notification to the member
+    if (duesRecord) {
+      try {
+        await fetch("/api/email/dues-confirmed", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            memberId: duesRecord.member_id,
+            month: `${selectedMonth}-01`,
+          }),
+        });
+      } catch {
+        // Email failure should not block confirmation
+      }
+    }
 
     setConfirming(null);
     await loadData();

@@ -171,6 +171,20 @@ export default function QuestionsPage() {
       .update({ status: "answered" })
       .eq("id", questionId);
 
+    // Send email notification to the question asker
+    try {
+      await fetch("/api/email/question-answered", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          questionId,
+          responseText: replyText,
+        }),
+      });
+    } catch {
+      // Email failure should not block the reply
+    }
+
     setReplyText("");
     setReplying(null);
     await loadData();

@@ -121,6 +121,9 @@ export function EventPaymentSection({
     setConfirming(paymentId);
     const supabase = createClient();
 
+    // Find this payment to get the member_id
+    const payment = allPayments.find((p) => p.id === paymentId);
+
     const { error } = await supabase
       .from("event_payments")
       .update({
@@ -130,6 +133,22 @@ export function EventPaymentSection({
       .eq("id", paymentId);
 
     if (!error) {
+      // Send email notification to the member
+      if (payment) {
+        try {
+          await fetch("/api/email/payment-confirmed", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              memberId: payment.member_id,
+              paymentType: "Event Payment",
+              amount: String(amount),
+            }),
+          });
+        } catch {
+          // Email failure should not block confirmation
+        }
+      }
       await loadData();
     }
     setConfirming(null);
