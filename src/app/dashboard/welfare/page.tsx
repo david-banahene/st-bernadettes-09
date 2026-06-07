@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -110,10 +111,12 @@ export default function WelfarePage() {
 
     if (insertError) {
       setError(insertError.message);
+      toast.error("Failed to submit request");
       setSubmitting(false);
       return;
     }
 
+    toast.success("Welfare request submitted");
     setShowForm(false);
     setSubmitting(false);
     await loadData();
@@ -150,6 +153,7 @@ export default function WelfarePage() {
       // Email failure should not block the review
     }
 
+    toast.success(`Request ${decision}`);
     setReviewNote("");
     setReviewing(null);
     await loadData();

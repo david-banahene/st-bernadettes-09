@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -84,10 +85,12 @@ export default function AnnouncementsPage() {
 
     if (insertError) {
       setError(insertError.message);
+      toast.error("Failed to post announcement");
       setSubmitting(false);
       return;
     }
 
+    toast.success("Announcement posted");
     setShowForm(false);
     setSubmitting(false);
     await loadData();
@@ -99,6 +102,7 @@ export default function AnnouncementsPage() {
       .from("announcements")
       .update({ pinned: !currentPinned })
       .eq("id", id);
+    toast.success(currentPinned ? "Unpinned" : "Pinned");
     await loadData();
   }
 

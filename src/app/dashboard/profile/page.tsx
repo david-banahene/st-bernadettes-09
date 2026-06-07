@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -122,12 +123,14 @@ export default function ProfilePage() {
 
     if (updateError) {
       setError(updateError.message);
+      toast.error("Failed to update profile");
     } else {
       setMember({ ...member, ...updates });
       setSuccess(true);
       setEditing(false);
       setPhotoFile(null);
       setPhotoPreview(null);
+      toast.success("Profile updated");
       setTimeout(() => setSuccess(false), 3000);
     }
     setSaving(false);

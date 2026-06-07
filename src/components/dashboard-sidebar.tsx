@@ -23,6 +23,7 @@ import {
   X,
 } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useBadgeNotifications } from "@/hooks/use-badge-notifications";
 
 type Props = {
   memberName: string;
@@ -76,6 +77,9 @@ export function DashboardSidebar({
 
   const showAdminLinks = memberRole === "leader" || memberRole === "admin";
 
+  // Notification badge dots
+  const { hasBadge, hasMoreBadge } = useBadgeNotifications(pathname);
+
   // Close "More" sheet when navigating
   useEffect(() => {
     setMoreOpen(false);
@@ -115,7 +119,7 @@ export function DashboardSidebar({
   return (
     <>
       {/* ========== MOBILE: Bottom Tab Bar ========== */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-sb-cream-dark bg-white md:hidden">
+      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-sb-green-dark shadow-[0_-2px_10px_rgba(0,0,0,0.15)] md:hidden">
         {/* Safe area padding for phones with bottom notches */}
         <div className="flex items-stretch justify-around pb-[env(safe-area-inset-bottom)]">
           {bottomTabs.map((tab) => {
@@ -125,18 +129,29 @@ export function DashboardSidebar({
                 key={tab.href}
                 href={tab.href}
                 className={cn(
-                  "flex min-w-[64px] flex-1 flex-col items-center gap-0.5 py-2 text-[10px] transition-colors",
+                  "flex min-w-[64px] flex-1 flex-col items-center gap-1 py-2.5 text-[11px] transition-all duration-200 active:scale-95",
                   isActive
-                    ? "font-semibold text-sb-green"
-                    : "text-muted-foreground"
+                    ? "font-semibold text-sb-gold"
+                    : "text-sb-cream/70"
                 )}
               >
-                <tab.icon
+                <span
                   className={cn(
-                    "h-6 w-6",
-                    isActive && "stroke-[2.5]"
+                    "relative flex items-center justify-center rounded-full px-4 py-1 transition-colors duration-200",
+                    isActive && "bg-sb-gold/15"
                   )}
-                />
+                >
+                  <tab.icon
+                    className={cn(
+                      "h-6 w-6",
+                      isActive && "stroke-[2.5]"
+                    )}
+                  />
+                  {/* Notification badge dot */}
+                  {hasBadge(tab.href) && (
+                    <span className="absolute -top-0.5 right-2 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-sb-green-dark" />
+                  )}
+                </span>
                 <span>{tab.label}</span>
               </Link>
             );
@@ -145,18 +160,29 @@ export function DashboardSidebar({
           <button
             onClick={() => setMoreOpen(true)}
             className={cn(
-              "flex min-w-[64px] flex-1 flex-col items-center gap-0.5 py-2 text-[10px] transition-colors",
+              "flex min-w-[64px] flex-1 flex-col items-center gap-1 py-2.5 text-[11px] transition-all duration-200 active:scale-95",
               isMorePage
-                ? "font-semibold text-sb-green"
-                : "text-muted-foreground"
+                ? "font-semibold text-sb-gold"
+                : "text-sb-cream/70"
             )}
           >
-            <MoreHorizontal
+            <span
               className={cn(
-                "h-6 w-6",
-                isMorePage && "stroke-[2.5]"
+                "relative flex items-center justify-center rounded-full px-4 py-1 transition-colors duration-200",
+                isMorePage && "bg-sb-gold/15"
               )}
-            />
+            >
+              <MoreHorizontal
+                className={cn(
+                  "h-6 w-6",
+                  isMorePage && "stroke-[2.5]"
+                )}
+              />
+              {/* Badge dot if any "More" section has new content */}
+              {hasMoreBadge() && (
+                <span className="absolute -top-0.5 right-2 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-sb-green-dark" />
+              )}
+            </span>
             <span>More</span>
           </button>
         </div>
@@ -221,8 +247,16 @@ export function DashboardSidebar({
                           : "text-sb-green-dark hover:bg-sb-cream"
                       )}
                     >
-                      <link.icon className="h-5 w-5 shrink-0" />
-                      <span>{link.label}</span>
+                      <div className="relative">
+                        <link.icon className="h-5 w-5 shrink-0" />
+                        {hasBadge(link.href) && (
+                          <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-red-500" />
+                        )}
+                      </div>
+                      <span className="flex-1">{link.label}</span>
+                      {hasBadge(link.href) && (
+                        <span className="h-2 w-2 rounded-full bg-red-500" />
+                      )}
                     </div>
                   </Link>
                 );
@@ -323,7 +357,12 @@ export function DashboardSidebar({
                       collapsed && "justify-center px-2"
                     )}
                   >
-                    <link.icon className="h-4 w-4 shrink-0" />
+                    <div className="relative">
+                      <link.icon className="h-4 w-4 shrink-0" />
+                      {hasBadge(link.href) && (
+                        <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-red-500" />
+                      )}
+                    </div>
                     {!collapsed && <span>{link.label}</span>}
                   </div>
                 </Link>

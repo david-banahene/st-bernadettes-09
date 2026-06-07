@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
+import { Toaster } from "@/components/ui/sonner";
 
 // This layout wraps all /dashboard pages. It checks if the user is
 // authenticated and loads their member profile for the sidebar.
@@ -46,6 +47,7 @@ export default async function DashboardLayout({
         )}
         {children}
       </main>
+      <Toaster position="top-center" richColors />
     </div>
   );
 }

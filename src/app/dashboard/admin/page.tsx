@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -143,6 +144,7 @@ export default function AdminPage() {
       // Email failure should not block approval
     }
 
+    toast.success("Member approved");
     await loadData();
     setApproving(null);
   }

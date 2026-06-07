@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
+import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,6 +21,7 @@ import {
   AlertCircle,
   Users,
   User,
+  Shield,
 } from "lucide-react";
 
 interface Question {
@@ -142,10 +145,12 @@ export default function QuestionsPage() {
 
     if (insertError) {
       setError(insertError.message);
+      toast.error("Failed to submit question");
       setSubmitting(false);
       return;
     }
 
+    toast.success("Question submitted");
     setShowForm(false);
     setSubmitting(false);
     setSendTo("leadership");
@@ -185,6 +190,7 @@ export default function QuestionsPage() {
       // Email failure should not block the reply
     }
 
+    toast.success("Response sent");
     setReplyText("");
     setReplying(null);
     await loadData();
@@ -307,47 +313,21 @@ export default function QuestionsPage() {
         </Card>
       )}
 
-      {/* Pending Questions */}
-      {pending.length > 0 && (
+      {/* All Questions - single unified list */}
+      {questions.length > 0 && (
         <div className="mt-8">
-          <h2 className="font-heading text-lg font-semibold text-sb-green-dark">
-            {isLeaderOrAdmin ? "Pending Questions" : "Awaiting Response"}
-            <span className="ml-2 text-sm font-normal text-muted-foreground">
-              ({pending.length})
+          <div className="flex items-center gap-3 text-sm text-muted-foreground">
+            <span className="flex items-center gap-1.5">
+              <span className="h-3 w-1 rounded-full bg-sb-gold" />
+              Pending ({pending.length})
             </span>
-          </h2>
-          <div className="mt-4 space-y-3">
-            {pending.map((q) => (
-              <QuestionCard
-                key={q.id}
-                question={q}
-                expanded={expandedId === q.id}
-                onToggle={() =>
-                  setExpandedId(expandedId === q.id ? null : q.id)
-                }
-                isLeaderOrAdmin={isLeaderOrAdmin}
-                currentUserId={currentUserId}
-                replyText={replyText}
-                onReplyChange={setReplyText}
-                onReply={() => handleReply(q.id)}
-                replying={replying === q.id}
-              />
-            ))}
+            <span className="flex items-center gap-1.5">
+              <span className="h-3 w-1 rounded-full bg-sb-green" />
+              Answered ({answered.length})
+            </span>
           </div>
-        </div>
-      )}
-
-      {/* Answered Questions */}
-      {answered.length > 0 && (
-        <div className="mt-8">
-          <h2 className="font-heading text-lg font-semibold text-sb-green-dark">
-            Answered
-            <span className="ml-2 text-sm font-normal text-muted-foreground">
-              ({answered.length})
-            </span>
-          </h2>
           <div className="mt-4 space-y-3">
-            {answered.map((q) => (
+            {questions.map((q) => (
               <QuestionCard
                 key={q.id}
                 question={q}
@@ -409,6 +389,9 @@ function QuestionCard({
   const isMine = question.asked_by === currentUserId;
   const canReply = isLeaderOrAdmin || question.asked_to === currentUserId;
 
+  // Get first response for the answer preview
+  const firstResponse = question.responses?.[0];
+
   let directionLabel = "";
   if (question.is_broadcast) {
     directionLabel = "To all members";
@@ -421,7 +404,12 @@ function QuestionCard({
   }
 
   return (
-    <Card className="border-sb-cream-dark bg-white">
+    <Card
+      className={cn(
+        "overflow-hidden border-sb-cream-dark bg-white transition-all duration-200",
+        isPending ? "border-l-4 border-l-sb-gold" : "border-l-4 border-l-sb-green"
+      )}
+    >
       <CardContent className="pt-5">
         <button
           onClick={onToggle}
@@ -471,6 +459,16 @@ function QuestionCard({
                 </>
               )}
             </div>
+
+            {/* Answer preview in collapsed state */}
+            {!expanded && firstResponse && (
+              <p className="mt-2 line-clamp-1 text-xs text-muted-foreground">
+                <span className="font-medium text-sb-green">
+                  {firstResponse.responder?.full_name || "Leadership"}:
+                </span>{" "}
+                {firstResponse.message}
+              </p>
+            )}
           </div>
           {expanded ? (
             <ChevronUp className="h-4 w-4 shrink-0 text-muted-foreground" />
@@ -480,10 +478,10 @@ function QuestionCard({
         </button>
 
         {expanded && (
-          <div className="mt-4 space-y-4">
+          <div className="mt-4 space-y-3">
             {/* Original Question */}
             <div className="rounded-lg bg-sb-cream p-3">
-              <p className="text-xs font-medium text-muted-foreground">
+              <p className="text-xs font-medium text-sb-green-dark">
                 {question.asker?.full_name || "Question"}
               </p>
               <p className="mt-1 whitespace-pre-wrap text-sm text-sb-green-dark">
@@ -491,17 +489,18 @@ function QuestionCard({
               </p>
             </div>
 
-            {/* Responses */}
+            {/* Responses - indented with left border */}
             {question.responses && question.responses.length > 0 && (
-              <div className="space-y-2">
+              <div className="ml-4 space-y-2 border-l-2 border-sb-green/30 pl-3">
                 {question.responses.map((r) => (
                   <div
                     key={r.id}
-                    className="rounded-lg border border-sb-green/20 bg-sb-green/5 p-3"
+                    className="rounded-lg bg-sb-green/5 p-3"
                   >
                     <div className="flex items-center gap-2">
+                      <Shield className="h-3 w-3 text-sb-green" />
                       <p className="text-xs font-semibold text-sb-green">
-                        {r.responder?.full_name || "Leader"}
+                        {r.responder?.full_name || "Leadership"}
                       </p>
                       <span className="text-xs text-muted-foreground">
                         {new Date(r.created_at).toLocaleDateString("en-GB", {

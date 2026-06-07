@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Playfair_Display } from "next/font/google";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
+import { ServiceWorkerRegister } from "@/components/sw-register";
 import "./globals.css";
 
 const inter = Inter({
@@ -71,6 +72,7 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/icons/icon-192.svg" />
       </head>
       <body className="min-h-full flex flex-col bg-sb-cream font-sans">
+        <ServiceWorkerRegister />
         <Navbar />
         <main className="flex-1">{children}</main>
         <Footer />

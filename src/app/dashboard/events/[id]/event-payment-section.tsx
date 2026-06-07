@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -112,7 +113,10 @@ export function EventPaymentSection({
     });
 
     if (!error) {
+      toast.success("Payment recorded");
       await loadData();
+    } else {
+      toast.error("Failed to record payment");
     }
     setSubmitting(false);
   }
@@ -149,7 +153,10 @@ export function EventPaymentSection({
           // Email failure should not block confirmation
         }
       }
+      toast.success("Payment confirmed");
       await loadData();
+    } else {
+      toast.error("Failed to confirm payment");
     }
     setConfirming(null);
   }
