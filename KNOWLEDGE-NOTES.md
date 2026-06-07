@@ -225,4 +225,36 @@ and it opens like a native app.
 
 ---
 
+## 12. Skeleton Loading Screens (Perceived Performance)
+
+**What we learned:** Users perceive speed based on feedback, not actual load
+time. A page that shows a skeleton animation in 100ms and fills data at 1.5s
+feels faster than a page that shows nothing for 1.5s then appears fully loaded.
+
+**Implementation in Next.js:**
+- Create a `loading.tsx` file in each route folder
+- Next.js automatically shows it while the page's server component loads
+- No code changes needed in the actual pages
+- Each skeleton should roughly match the layout of the real page
+
+**Design rules for skeletons:**
+- Use `animate-pulse` on placeholder divs
+- Match the real page layout (cards, lists, headers)
+- Use brand-neutral gray tones (`bg-sb-cream-dark`)
+- Round corners to match the real components
+- Never show a generic spinner - shaped skeletons feel faster
+
+**Files added:**
+- `src/app/dashboard/loading.tsx` (home)
+- `src/app/dashboard/profile/loading.tsx`
+- `src/app/dashboard/events/loading.tsx`
+- `src/app/dashboard/members/loading.tsx`
+- `src/app/dashboard/announcements/loading.tsx`
+- `src/app/dashboard/questions/loading.tsx`
+- `src/app/dashboard/welfare/loading.tsx`
+- `src/app/dashboard/minutes/loading.tsx`
+- `src/app/dashboard/admin/loading.tsx`
+
+---
+
 *Last updated: June 2026*
