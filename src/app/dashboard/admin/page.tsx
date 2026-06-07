@@ -1,0 +1,372 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import Link from "next/link";
+import {
+  Shield,
+  Users,
+  UserCheck,
+  UserX,
+  DollarSign,
+  CalendarDays,
+  Loader2,
+  ChevronRight,
+  CheckCircle2,
+  Clock,
+} from "lucide-react";
+
+interface Stats {
+  totalMembers: number;
+  activeMembers: number;
+  pendingMembers: number;
+  goodStandingCount: number;
+  upcomingEvents: number;
+  pendingQuestions: number;
+  pendingWelfare: number;
+}
+
+interface PendingMember {
+  id: string;
+  full_name: string;
+  email: string;
+  phone_number: string;
+  town_or_city: string;
+  photo_url: string | null;
+  created_at: string;
+}
+
+export default function AdminPage() {
+  const router = useRouter();
+  const [stats, setStats] = useState<Stats | null>(null);
+  const [pendingMembers, setPendingMembers] = useState<PendingMember[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [authorized, setAuthorized] = useState(false);
+  const [approving, setApproving] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  async function loadData() {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data: member } = await supabase
+      .from("members")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+
+    if (member?.role !== "admin") {
+      setLoading(false);
+      return;
+    }
+    setAuthorized(true);
+
+    const { count: totalMembers } = await supabase
+      .from("members")
+      .select("*", { count: "exact", head: true });
+
+    const { count: activeMembers } = await supabase
+      .from("members")
+      .select("*", { count: "exact", head: true })
+      .eq("membership_status", "active");
+
+    const { count: pendingCount } = await supabase
+      .from("members")
+      .select("*", { count: "exact", head: true })
+      .eq("membership_status", "pending");
+
+    const { count: goodStandingCount } = await supabase
+      .from("members")
+      .select("*", { count: "exact", head: true })
+      .eq("good_standing", true);
+
+    const { count: upcomingEvents } = await supabase
+      .from("events")
+      .select("*", { count: "exact", head: true })
+      .gt("event_date", new Date().toISOString());
+
+    const { count: pendingQuestions } = await supabase
+      .from("questions")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "pending");
+
+    const { count: pendingWelfare } = await supabase
+      .from("welfare_requests")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "pending");
+
+    setStats({
+      totalMembers: totalMembers ?? 0,
+      activeMembers: activeMembers ?? 0,
+      pendingMembers: pendingCount ?? 0,
+      goodStandingCount: goodStandingCount ?? 0,
+      upcomingEvents: upcomingEvents ?? 0,
+      pendingQuestions: pendingQuestions ?? 0,
+      pendingWelfare: pendingWelfare ?? 0,
+    });
+
+    const { data: pending } = await supabase
+      .from("members")
+      .select("id, full_name, email, phone_number, town_or_city, photo_url, created_at")
+      .eq("membership_status", "pending")
+      .order("created_at", { ascending: true });
+
+    setPendingMembers(pending || []);
+    setLoading(false);
+  }
+
+  async function approveMember(memberId: string) {
+    setApproving(memberId);
+    const supabase = createClient();
+    await supabase
+      .from("members")
+      .update({ membership_status: "active" })
+      .eq("id", memberId);
+    await loadData();
+    setApproving(null);
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="h-6 w-6 animate-spin text-sb-green" />
+      </div>
+    );
+  }
+
+  if (!authorized) {
+    return (
+      <div className="py-20 text-center">
+        <Shield className="mx-auto h-8 w-8 text-sb-cream-dark" />
+        <p className="mt-2 text-sm text-muted-foreground">
+          Admin access only.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div className="flex items-center gap-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-sb-gold/10 text-sb-gold-dark">
+          <Shield className="h-5 w-5" />
+        </div>
+        <div>
+          <h1 className="font-heading text-2xl font-bold text-sb-green-dark">
+            Admin Panel
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Manage the association
+          </p>
+        </div>
+      </div>
+
+      {/* Stats Grid */}
+      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <Card className="border-sb-cream-dark bg-white">
+          <CardContent className="flex items-center gap-4 pt-6">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-sb-green/8 text-sb-green">
+              <Users className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Total Members</p>
+              <p className="text-xl font-bold text-sb-green-dark">
+                {stats?.totalMembers}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-sb-cream-dark bg-white">
+          <CardContent className="flex items-center gap-4 pt-6">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-sb-green/8 text-sb-green">
+              <UserCheck className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Active</p>
+              <p className="text-xl font-bold text-sb-green-dark">
+                {stats?.activeMembers}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-sb-cream-dark bg-white">
+          <CardContent className="flex items-center gap-4 pt-6">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-sb-gold/8 text-sb-gold-dark">
+              <Clock className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Pending Approval</p>
+              <p className="text-xl font-bold text-sb-green-dark">
+                {stats?.pendingMembers}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-sb-cream-dark bg-white">
+          <CardContent className="flex items-center gap-4 pt-6">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-sb-green/8 text-sb-green">
+              <CheckCircle2 className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Good Standing</p>
+              <p className="text-xl font-bold text-sb-green-dark">
+                {stats?.goodStandingCount}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Quick Links */}
+      <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <Link href="/dashboard/admin/members">
+          <Card className="cursor-pointer border-sb-cream-dark bg-white transition-all hover:-translate-y-0.5 hover:shadow-md">
+            <CardContent className="flex items-center justify-between py-4">
+              <div className="flex items-center gap-3">
+                <Users className="h-5 w-5 text-sb-green" />
+                <div>
+                  <p className="text-sm font-semibold text-sb-green-dark">
+                    Manage Members
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Roles, status, approvals
+                  </p>
+                </div>
+              </div>
+              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link href="/dashboard/admin/dues">
+          <Card className="cursor-pointer border-sb-cream-dark bg-white transition-all hover:-translate-y-0.5 hover:shadow-md">
+            <CardContent className="flex items-center justify-between py-4">
+              <div className="flex items-center gap-3">
+                <DollarSign className="h-5 w-5 text-sb-gold-dark" />
+                <div>
+                  <p className="text-sm font-semibold text-sb-green-dark">
+                    Dues & Payments
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Monthly dues, commitment fees
+                  </p>
+                </div>
+              </div>
+              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link href="/dashboard/admin/events">
+          <Card className="cursor-pointer border-sb-cream-dark bg-white transition-all hover:-translate-y-0.5 hover:shadow-md">
+            <CardContent className="flex items-center justify-between py-4">
+              <div className="flex items-center gap-3">
+                <CalendarDays className="h-5 w-5 text-sb-green" />
+                <div>
+                  <p className="text-sm font-semibold text-sb-green-dark">
+                    Create Event
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {stats?.upcomingEvents} upcoming
+                  </p>
+                </div>
+              </div>
+              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            </CardContent>
+          </Card>
+        </Link>
+      </div>
+
+      {/* Pending Approvals */}
+      <div className="mt-8">
+        <h2 className="font-heading text-lg font-semibold text-sb-green-dark">
+          Pending Approvals
+          {pendingMembers.length > 0 && (
+            <span className="ml-2 text-sm font-normal text-muted-foreground">
+              ({pendingMembers.length})
+            </span>
+          )}
+        </h2>
+
+        {pendingMembers.length > 0 ? (
+          <div className="mt-4 space-y-3">
+            {pendingMembers.map((m) => {
+              const initials = m.full_name
+                .split(" ")
+                .map((n) => n[0])
+                .join("")
+                .toUpperCase()
+                .slice(0, 2);
+
+              return (
+                <Card key={m.id} className="border-sb-cream-dark bg-white">
+                  <CardContent className="flex items-center gap-4 py-4">
+                    <Avatar className="h-10 w-10 border border-sb-cream-dark">
+                      {m.photo_url && (
+                        <AvatarImage src={m.photo_url} alt={m.full_name} />
+                      )}
+                      <AvatarFallback className="bg-sb-green text-xs font-semibold text-sb-gold">
+                        {initials}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold text-sb-green-dark">
+                        {m.full_name}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {m.email} - {m.phone_number} - {m.town_or_city}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Registered{" "}
+                        {new Date(m.created_at).toLocaleDateString("en-GB", {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                        })}
+                      </p>
+                    </div>
+                    <Button
+                      size="sm"
+                      onClick={() => approveMember(m.id)}
+                      disabled={approving === m.id}
+                      className="bg-sb-green text-white hover:bg-sb-green-light"
+                    >
+                      {approving === m.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <>
+                          <UserCheck className="mr-1 h-4 w-4" />
+                          Approve
+                        </>
+                      )}
+                    </Button>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        ) : (
+          <Card className="mt-4 border-sb-cream-dark bg-white">
+            <CardContent className="py-8 text-center">
+              <p className="text-sm text-muted-foreground">
+                No pending approvals.
+              </p>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    </div>
+  );
+}

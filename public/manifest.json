@@ -1,0 +1,24 @@
+{
+  "name": "St. Bernadette's '09 Association",
+  "short_name": "SB '09",
+  "description": "One Year Group, One Family. St. Bernadette's JHS 2009 Year Group Association.",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#FAF6F0",
+  "theme_color": "#1B4332",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icons/icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
