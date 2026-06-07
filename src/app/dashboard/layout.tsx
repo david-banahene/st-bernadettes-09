@@ -35,7 +35,7 @@ export default async function DashboardLayout({
         memberPhoto={member?.photo_url}
         memberStatus={member?.membership_status || "pending"}
       />
-      <main className="flex-1 overflow-y-auto bg-sb-cream p-4 sm:p-6 lg:p-8">
+      <main className="flex-1 overflow-y-auto bg-sb-cream p-4 pb-20 sm:p-6 md:pb-6 lg:p-8">
         {member?.membership_status === "pending" && (
           <div className="mb-6 rounded-lg border border-sb-gold/30 bg-sb-gold/5 p-4">
             <p className="text-sm text-sb-gold-dark">
