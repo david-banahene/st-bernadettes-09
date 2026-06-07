@@ -182,8 +182,27 @@ Before doing anything, read:
   server actions or API routes to call the email functions from client components).
   This can be wired during deployment or as a follow-up.
 
-### REMAINING PHASES
-- Phase 9: Deploy to Vercel
+### COMPLETED: Phase 9 - Deployment
+- DONE: GitHub CLI installed, authenticated as david-banahene
+- DONE: GitHub repo created (public): github.com/david-banahene/st-bernadettes-09
+- DONE: Password recovery flow added (forgot-password + reset-password pages)
+- DONE: Login page updated with "Forgot your password?" link
+- DONE: Suspense boundary fix for useSearchParams() in login page
+- DONE: Deployed to Vercel (Hobby plan, free)
+  - Live URL: https://sbfamily.vercel.app
+  - Project name: sbfamily
+  - Environment variables configured (Supabase URL, anon key, Resend API key)
+- DONE: Supabase URL Configuration updated
+  - Site URL: https://sbfamily.vercel.app
+  - Redirect URLs: http://localhost:3000/** AND https://sbfamily.vercel.app/**
+- DONE: Login tested and working on production
+- NOTE: Auto-deploys enabled (push to master = live update in ~60 seconds)
+- TODO (post-launch): Clean up test data in Supabase before sharing with members
+- TODO (post-launch): Add delete buttons for admin on announcements, events, questions
+- TODO (post-launch): Buy custom domain and connect in Vercel
+- TODO (post-launch): Wire email functions into page actions via server actions
+
+### ALL 9 PHASES COMPLETE - APP IS LIVE
 
 ## Payment System Decision
 DECISION: Using manual MoMo payment tracking instead of Paystack.
