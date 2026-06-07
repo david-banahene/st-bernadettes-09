@@ -131,6 +131,18 @@ export default function AdminPage() {
       .from("members")
       .update({ membership_status: "active" })
       .eq("id", memberId);
+
+    // Send welcome email to the approved member
+    try {
+      await fetch("/api/email/member-approved", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ memberId }),
+      });
+    } catch {
+      // Email failure should not block approval
+    }
+
     await loadData();
     setApproving(null);
   }
