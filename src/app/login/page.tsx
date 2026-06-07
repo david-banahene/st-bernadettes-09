@@ -120,15 +120,25 @@ export default function LoginPage() {
                   )}
                 </Button>
 
-                <p className="text-center text-sm text-muted-foreground">
-                  Not a member yet?{" "}
-                  <Link
-                    href="/register"
-                    className="font-medium text-sb-green hover:text-sb-green-light"
-                  >
-                    Register here
-                  </Link>
-                </p>
+                <div className="text-center space-y-2">
+                  <p className="text-sm text-muted-foreground">
+                    <Link
+                      href="/forgot-password"
+                      className="font-medium text-sb-green hover:text-sb-green-light"
+                    >
+                      Forgot your password?
+                    </Link>
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Not a member yet?{" "}
+                    <Link
+                      href="/register"
+                      className="font-medium text-sb-green hover:text-sb-green-light"
+                    >
+                      Register here
+                    </Link>
+                  </p>
+                </div>
               </form>
             </CardContent>
           </Card>
