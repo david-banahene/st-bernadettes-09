@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { BlurFade } from "@/components/ui/blur-fade";
 import { Loader2, UserPlus, AlertCircle } from "lucide-react";
+import { PhoneInput } from "@/components/phone-input";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -27,6 +28,13 @@ export default function RegisterPage() {
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
     const confirmPassword = formData.get("confirmPassword") as string;
+
+    // Validate photo is uploaded
+    if (!photoFile) {
+      setError("Profile photo is required. Please upload a photo.");
+      setLoading(false);
+      return;
+    }
 
     // Validate passwords match
     if (password !== confirmPassword) {
@@ -207,13 +215,10 @@ export default function RegisterPage() {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="phoneNumber">Phone Number *</Label>
-                      <Input
-                        id="phoneNumber"
+                      <Label>Phone Number *</Label>
+                      <PhoneInput
                         name="phoneNumber"
-                        type="tel"
                         required
-                        placeholder="+233 XX XXX XXXX"
                         className="mt-1"
                       />
                     </div>
@@ -276,13 +281,10 @@ export default function RegisterPage() {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="emergencyContactPhone">Emergency Contact Phone *</Label>
-                      <Input
-                        id="emergencyContactPhone"
+                      <Label>Emergency Contact Phone *</Label>
+                      <PhoneInput
                         name="emergencyContactPhone"
-                        type="tel"
                         required
-                        placeholder="+233 XX XXX XXXX"
                         className="mt-1"
                       />
                     </div>
@@ -313,19 +315,20 @@ export default function RegisterPage() {
                     Profile Photo
                   </h3>
                   <div className="mt-3">
-                    <Label htmlFor="photo">Upload a photo (optional)</Label>
+                    <Label htmlFor="photo">Upload a photo *</Label>
                     <Input
                       id="photo"
                       name="photo"
                       type="file"
                       accept="image/*"
+                      required
                       onChange={(e) =>
                         setPhotoFile(e.target.files?.[0] || null)
                       }
                       className="mt-1"
                     />
                     <p className="mt-1 text-xs text-muted-foreground">
-                      JPG, PNG, or WebP. Max 5MB.
+                      A clear photo of your face. JPG, PNG, or WebP. Max 5MB.
                     </p>
                   </div>
                 </div>

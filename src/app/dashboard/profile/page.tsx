@@ -20,6 +20,7 @@ import {
   AlertCircle,
   Loader2,
 } from "lucide-react";
+import { PhoneInput } from "@/components/phone-input";
 
 type Member = {
   id: string;
@@ -337,7 +338,7 @@ export default function ProfilePage() {
                   <div>
                     <Label className="text-xs text-muted-foreground">Phone Number</Label>
                     {editing ? (
-                      <Input
+                      <PhoneInput
                         name="phoneNumber"
                         defaultValue={member.phone_number}
                         required
@@ -436,7 +437,7 @@ export default function ProfilePage() {
                   <div>
                     <Label className="text-xs text-muted-foreground">Emergency Phone</Label>
                     {editing ? (
-                      <Input
+                      <PhoneInput
                         name="emergencyContactPhone"
                         defaultValue={member.emergency_contact_phone}
                         required
