@@ -178,9 +178,15 @@ Before doing anything, read:
 - DONE: Resend account created (abanahene54@gmail.com), API key added to .env.local
   - For production, verify domain and set:
     RESEND_FROM_EMAIL=St. Bernadette's '09 <noreply@yourdomain.org>
-- NOTE: Email sending is currently not wired into the page actions (it requires
-  server actions or API routes to call the email functions from client components).
-  This can be wired during deployment or as a follow-up.
+- DONE: All email notifications wired into page actions via API routes:
+  - Member approved: admin approves -> welcome email to member
+  - New event created: leader/admin creates event -> email to all active members
+  - Question answered: leader/admin replies -> email to question asker
+  - Event payment confirmed: admin confirms -> email to member
+  - Welfare decision: leader approves/declines -> email to requesting member
+  - New announcement: leader/admin posts -> email to all active members
+  - Monthly dues confirmed: admin confirms -> email to member
+  - All notifications are fire-and-forget (failure never blocks the action)
 
 ### COMPLETED: Phase 9 - Deployment
 - DONE: GitHub CLI installed, authenticated as david-banahene
@@ -200,7 +206,7 @@ Before doing anything, read:
 - TODO (post-launch): Clean up test data in Supabase before sharing with members
 - TODO (post-launch): Add delete buttons for admin on announcements, events, questions
 - TODO (post-launch): Buy custom domain and connect in Vercel
-- TODO (post-launch): Wire email functions into page actions via server actions
+- DONE (post-launch): All email functions wired into page actions via API routes
 
 ### ALL 9 PHASES COMPLETE - APP IS LIVE
 

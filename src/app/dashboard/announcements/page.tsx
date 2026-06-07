@@ -88,20 +88,6 @@ export default function AnnouncementsPage() {
       return;
     }
 
-    // Send email notification to all active members
-    try {
-      await fetch("/api/email/new-announcement", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: formData.get("title") as string,
-          content: formData.get("content") as string,
-        }),
-      });
-    } catch {
-      // Email failure should not block the announcement
-    }
-
     setShowForm(false);
     setSubmitting(false);
     await loadData();
