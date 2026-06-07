@@ -178,15 +178,14 @@ Before doing anything, read:
 - DONE: Resend account created (abanahene54@gmail.com), API key added to .env.local
   - For production, verify domain and set:
     RESEND_FROM_EMAIL=St. Bernadette's '09 <noreply@yourdomain.org>
-- DONE: All email notifications wired into page actions via API routes:
+- DONE: Email notifications wired (essential only, to preserve 100/day Resend limit):
   - Member approved: admin approves -> welcome email to member
-  - New event created: leader/admin creates event -> email to all active members
   - Question answered: leader/admin replies -> email to question asker
   - Event payment confirmed: admin confirms -> email to member
   - Welfare decision: leader approves/declines -> email to requesting member
-  - New announcement: leader/admin posts -> email to all active members
-  - Monthly dues confirmed: admin confirms -> email to member
   - All notifications are fire-and-forget (failure never blocks the action)
+  - REMOVED (non-essential): new event, new announcement, dues confirmed
+    (WhatsApp share covers bulk notifications; dues visible in app)
 
 ### COMPLETED: Phase 9 - Deployment
 - DONE: GitHub CLI installed, authenticated as david-banahene
@@ -206,7 +205,13 @@ Before doing anything, read:
 - TODO (post-launch): Clean up test data in Supabase before sharing with members
 - TODO (post-launch): Add delete buttons for admin on announcements, events, questions
 - TODO (post-launch): Buy custom domain and connect in Vercel
-- DONE (post-launch): All email functions wired into page actions via API routes
+- DONE (post-launch): Essential email notifications wired via API routes
+- DONE (post-launch): Country code selector on phone inputs (40+ countries, Ghana default)
+  - Reusable PhoneInput component (src/components/phone-input.tsx)
+  - Applied to registration form (personal + emergency phone)
+  - Applied to profile edit page (personal + emergency phone)
+  - Numbers stored in full international format (e.g., +233241234567)
+- DONE (post-launch): Profile photo required at registration (was optional)
 
 ### ALL 9 PHASES COMPLETE - APP IS LIVE
 
