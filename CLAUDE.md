@@ -202,9 +202,12 @@ Before doing anything, read:
   - Redirect URLs: http://localhost:3000/** AND https://sbfamily.vercel.app/**
 - DONE: Login tested and working on production
 - NOTE: Auto-deploys enabled (push to master = live update in ~60 seconds)
-- TODO (post-launch): Clean up test data in Supabase before sharing with members
+- TODO (post-launch): Clean up test data in Supabase before rolling out to all ~50 members
 - TODO (post-launch): Add delete buttons for admin on announcements, events, questions
 - TODO (post-launch): Buy custom domain and connect in Vercel
+- TODO (post-launch): Dashboard home Standing card - show financial health detail (not just Good/Pending)
+- TODO (post-launch): Grace period warning banner (amber) for members approaching dues deadline
+- TODO (future): Leader delegation - admin can grant leaders ability to confirm payments, manage dues
 - DONE (post-launch): Essential email notifications wired via API routes
 - DONE (post-launch): Country code selector on phone inputs (40+ countries, Ghana default)
   - Reusable PhoneInput component (src/components/phone-input.tsx)
@@ -235,17 +238,64 @@ Before doing anything, read:
 
 ### ALL 9 PHASES COMPLETE - APP IS LIVE
 
+### COMPLETED: Payment Enforcement System (Post-Launch)
+- DONE: Payment wall blocks non-admin members until all financial obligations are cleared
+  - Full-screen overlay in dashboard layout, hides sidebar and all content
+  - Admin (David) always exempt from the wall
+  - Shows: total outstanding, MoMo details, active collection month, each obligation as a card
+  - Members tap "I Have Paid" after sending MoMo, admin confirms from admin panel
+  - Wall lifts only when ALL obligations are confirmed by admin
+  - Component: src/components/payment-wall.tsx
+- DONE: SQL migration for payment system (supabase/create-payment-system.sql - EXECUTED)
+  - app_settings table (key-value store): momo_name, momo_number, momo_network, active_collection_month
+  - commitment_fee_pending column on members table
+  - member_claimed status for monthly_dues (member self-reports, admin confirms)
+  - restricted membership status option
+  - RLS policies for members to read own dues and claim payments
+- DONE: Admin MoMo collection settings (Admin Panel > MoMo Collection Details)
+  - Recipient name, number, network configurable by admin
+  - Shown to all members on payment wall and event payment sections
+  - Stored in app_settings table, can be changed to any phone number anytime
+- DONE: Commitment fee enforcement
+  - All members default to commitment_fee_paid = false
+  - Payment wall blocks until commitment fee is confirmed
+  - Admin marks paid from Manage Members page or confirms member claims from Admin Panel
+  - Standing auto-recalculates on confirmation
+- DONE: Enhanced dues management (Admin > Dues & Payments)
+  - Active collection month: admin sets which month is being collected, shown to members
+  - "Generate for All Members": bulk-creates GHS 20 records for all active members for a month
+  - "Add for Specific Member": creates dues for one member for a specific month (for backdated arrears)
+  - Month selector to view/manage any month's dues
+  - Stats row: paid, pending, claims paid, collected
+  - Per-member cards with confirm button (gold highlight for claimed payments)
+  - "Update Standing" recalculates good_standing for all members
+- DONE: Smart grace periods for payment wall trigger
+  - Commitment fee: no grace period (immediate wall)
+  - Past-month dues (month < current month): 3-day grace from record creation
+  - Current-month dues: 14-day grace from record creation
+  - Once grace expires and dues are still pending, payment wall activates
+  - Members who claim payment (status = member_claimed) are not walled for that item
+- DONE: Dashboard layout updated (src/app/dashboard/layout.tsx)
+  - Loads payment fields: good_standing, commitment_fee_paid, commitment_fee_pending
+  - Checks commitment fee status + overdue dues with smart grace periods
+  - Shows PaymentWall or normal dashboard based on payment status
+- DONE: Event payment section uses app_settings for MoMo details (not admin profile)
+- DONE: Admin dues page auto-recalculates standing on every payment confirmation
+
 ## Payment System Decision
 DECISION: Using manual MoMo payment tracking instead of Paystack.
 WHY: Paystack charges 1.95% per transaction. For small amounts (GH20 dues, GH100 commitment),
 fees are wasteful for a 50-member association. Members already know how to send MoMo directly.
 HOW IT WORKS:
 1. Admin sets MoMo details (name, number, network) in app settings
-2. Members see what they owe + admin's MoMo number to send payment
-3. Member clicks "I Have Paid" after sending (optionally enters transaction reference)
-4. Admin sees pending confirmations, clicks "Confirm Received" after verifying
-5. Dashboard shows payment progress tracker (e.g., "23/45 paid for June dues")
+2. Admin sets active collection month (shown to members on payment wall)
+3. Admin generates dues (bulk for all, or per-member for backdated arrears)
+4. Members see what they owe + MoMo details on payment wall
+5. Member clicks "I Have Paid" after sending MoMo
+6. Admin sees pending claims, clicks "Confirm Received" after verifying
+7. Standing auto-recalculates, wall lifts when all obligations confirmed
 APPLIES TO: Monthly dues, commitment fees, event payments
+GRACE PERIODS: Commitment fee = immediate wall. Past-month dues = 3 days. Current-month = 14 days.
 
 ---
 
@@ -253,9 +303,11 @@ APPLIES TO: Monthly dues, commitment fees, event payments
 - Next.js 16 (App Router, TypeScript, Turbopack)
 - Tailwind CSS v4 + shadcn/ui + Magic UI components
 - Framer Motion for animations
-- Supabase (PostgreSQL, Auth, Storage) - NOT YET CONNECTED
-- Paystack (Ghana Mobile Money) - NOT YET INTEGRATED
-- Resend (email notifications) - NOT YET INTEGRATED
+- Supabase (PostgreSQL, Auth, Storage, RLS) - eu-west-2 London
+- Resend (email notifications) - free tier, 100/day
+- Sonner (toast notifications) - via shadcn/ui
+- Manual MoMo payment tracking (no Paystack - see Payment System Decision)
+- Service worker for offline support + fast repeat loads
 - Fonts: Playfair Display (headings), Inter (body)
 
 ## Branding

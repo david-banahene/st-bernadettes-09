@@ -367,4 +367,90 @@ Old caches are automatically cleaned up on activation.
 
 ---
 
+## 18. Payment Wall Pattern (Full-Screen Access Gate)
+
+**What we learned:** When financial obligations are not enforced by the app,
+members delay or avoid payment. A full-screen payment wall that blocks all
+app functionality until obligations are cleared drives seriousness and timely
+collection. This is the single most important feature for an association app
+with financial obligations.
+
+**Architecture:**
+- Server-side check in the dashboard layout (not client-side, cannot be bypassed)
+- Layout loads member payment fields, checks obligations, renders wall OR dashboard
+- Wall is a `fixed inset-0 z-50` overlay that replaces the entire dashboard
+- Sidebar and main content are conditionally rendered (not hidden behind the wall)
+- Admin role is always exempt (checked first, short-circuits all payment logic)
+
+**Payment wall triggers (in order of priority):**
+1. Commitment fee not paid (`commitment_fee_paid = false`) = immediate wall
+2. Past-month dues pending + grace expired (3 days) = wall
+3. Current-month dues pending + grace expired (14 days) = wall
+4. Members who clicked "I Have Paid" (status = `member_claimed`) are NOT walled for that item
+
+**Key files:**
+- `src/components/payment-wall.tsx` (the wall UI, client component)
+- `src/app/dashboard/layout.tsx` (server-side gate logic)
+- `supabase/create-payment-system.sql` (tables, columns, RLS)
+
+**Why server-side gating:** A client-side check can be bypassed by navigating
+directly to a URL. The layout is a server component that runs before any page
+renders, so the wall cannot be circumvented.
+
+---
+
+## 19. Admin-Configurable Settings (Key-Value Store Pattern)
+
+**What we learned:** Hardcoding values like MoMo phone numbers into the code
+or tying them to a specific user profile is inflexible. A simple key-value
+`app_settings` table lets the admin change operational details without code
+changes or database access.
+
+**Implementation:**
+- Table: `app_settings` with columns: `key` (text PK), `value` (text), `updated_at`
+- RLS: all authenticated users can read, only admin can write
+- Admin UI: input fields on the admin panel with a "Save" button
+- Reading: query with `.in("key", ["momo_name", "momo_number", ...])` then convert to map
+
+**Settings we store:**
+- `momo_name`: Name of MoMo collection recipient
+- `momo_number`: MoMo phone number
+- `momo_network`: MTN MoMo / Vodafone Cash / AirtelTigo Money
+- `active_collection_month`: Which month is currently being collected (shown to members)
+
+**Extensible:** Any new admin-configurable value can be added by inserting a row.
+No schema changes needed.
+
+---
+
+## 20. Dues Management: Bulk vs Per-Member Generation
+
+**What we learned:** A bulk "generate dues for everyone" button works for the
+current month, but an association also needs to track backdated arrears. Some
+members owe from months before the app existed.
+
+**Two-track approach:**
+1. "Generate for All Members" - bulk creates GHS 20 for every active member for
+   a selected month. Skips members who already have a record (no duplicates).
+2. "Add for Specific Member" - select one member + one month, create a single
+   dues record. Use for backdated arrears (e.g. April, May before the app).
+
+**Grace period logic (smart, not flat):**
+- Past-month dues: 3-day grace from record creation (already overdue, short courtesy)
+- Current-month dues: 14-day grace from record creation (fair window to pay)
+- Commitment fee: no grace (must pay before any access)
+
+**Active collection month:**
+- Stored in `app_settings` as `active_collection_month`
+- Admin sets it from the dues page
+- Members see it on the payment wall: "Currently collecting: June 2026"
+- Gives members context about what the payment is for
+
+**Standing calculation:**
+- `good_standing = commitment_fee_paid AND all_dues_paid`
+- Auto-recalculates on every payment confirmation
+- "Update Standing" button recalculates for all members at once
+
+---
+
 *Last updated: June 2026*
