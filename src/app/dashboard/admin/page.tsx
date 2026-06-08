@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Link from "next/link";
+import { Input } from "@/components/ui/input";
 import {
   Shield,
   Users,
@@ -20,6 +21,8 @@ import {
   ChevronRight,
   CheckCircle2,
   Clock,
+  Smartphone,
+  Save,
 } from "lucide-react";
 
 interface Stats {
@@ -49,6 +52,12 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [authorized, setAuthorized] = useState(false);
   const [approving, setApproving] = useState<string | null>(null);
+  const [momoName, setMomoName] = useState("");
+  const [momoNumber, setMomoNumber] = useState("");
+  const [momoNetwork, setMomoNetwork] = useState("MTN MoMo");
+  const [savingMomo, setSavingMomo] = useState(false);
+  const [pendingCommitments, setPendingCommitments] = useState<PendingMember[]>([]);
+  const [confirmingFee, setConfirmingFee] = useState<string | null>(null);
 
   useEffect(() => {
     loadData();
@@ -122,6 +131,30 @@ export default function AdminPage() {
       .order("created_at", { ascending: true });
 
     setPendingMembers(pending || []);
+
+    // Load MoMo collection settings
+    const { data: settings } = await supabase
+      .from("app_settings")
+      .select("key, value")
+      .in("key", ["momo_name", "momo_number", "momo_network"]);
+
+    if (settings) {
+      const map = Object.fromEntries(settings.map((s) => [s.key, s.value]));
+      setMomoName(map.momo_name || "");
+      setMomoNumber(map.momo_number || "");
+      setMomoNetwork(map.momo_network || "MTN MoMo");
+    }
+
+    // Load members who claimed commitment fee payment (pending confirmation)
+    const { data: commitmentPending } = await supabase
+      .from("members")
+      .select("id, full_name, email, phone_number, town_or_city, photo_url, created_at")
+      .eq("commitment_fee_pending", true)
+      .eq("commitment_fee_paid", false)
+      .order("created_at", { ascending: true });
+
+    setPendingCommitments(commitmentPending || []);
+
     setLoading(false);
   }
 
@@ -147,6 +180,62 @@ export default function AdminPage() {
     toast.success("Member approved");
     await loadData();
     setApproving(null);
+  }
+
+  async function saveMomoSettings() {
+    setSavingMomo(true);
+    const supabase = createClient();
+
+    const updates = [
+      { key: "momo_name", value: momoName },
+      { key: "momo_number", value: momoNumber },
+      { key: "momo_network", value: momoNetwork },
+    ];
+
+    for (const u of updates) {
+      await supabase
+        .from("app_settings")
+        .upsert({ key: u.key, value: u.value, updated_at: new Date().toISOString() });
+    }
+
+    toast.success("MoMo details updated");
+    setSavingMomo(false);
+  }
+
+  async function confirmCommitmentFee(memberId: string) {
+    setConfirmingFee(memberId);
+    const supabase = createClient();
+
+    await supabase
+      .from("members")
+      .update({
+        commitment_fee_paid: true,
+        commitment_fee_pending: false,
+      })
+      .eq("id", memberId);
+
+    // Recalculate standing for this member
+    const { count: totalDues } = await supabase
+      .from("monthly_dues")
+      .select("*", { count: "exact", head: true })
+      .eq("member_id", memberId);
+
+    const { count: paidDues } = await supabase
+      .from("monthly_dues")
+      .select("*", { count: "exact", head: true })
+      .eq("member_id", memberId)
+      .eq("status", "paid");
+
+    const allDuesPaid = totalDues !== null && totalDues > 0 ? paidDues === totalDues : true;
+
+    await supabase
+      .from("members")
+      .update({ good_standing: allDuesPaid })
+      .eq("id", memberId);
+
+    toast.success("Commitment fee confirmed");
+    await loadData();
+    setConfirmingFee(null);
   }
 
   if (loading) {
@@ -302,6 +391,134 @@ export default function AdminPage() {
           </Card>
         </Link>
       </div>
+
+      {/* MoMo Collection Settings */}
+      <div className="mt-8">
+        <h2 className="font-heading text-lg font-semibold text-sb-green-dark">
+          MoMo Collection Details
+        </h2>
+        <p className="text-xs text-muted-foreground">
+          This is shown to all members when they need to make payments.
+        </p>
+        <Card className="mt-3 border-sb-cream-dark bg-white">
+          <CardContent className="pt-5">
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">
+                  Recipient Name
+                </label>
+                <Input
+                  value={momoName}
+                  onChange={(e) => setMomoName(e.target.value)}
+                  placeholder="e.g. Kwame Asante"
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">
+                  MoMo Number
+                </label>
+                <Input
+                  value={momoNumber}
+                  onChange={(e) => setMomoNumber(e.target.value)}
+                  placeholder="e.g. 0241234567"
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">
+                  Network
+                </label>
+                <select
+                  value={momoNetwork}
+                  onChange={(e) => setMomoNetwork(e.target.value)}
+                  className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                >
+                  <option>MTN MoMo</option>
+                  <option>Vodafone Cash</option>
+                  <option>AirtelTigo Money</option>
+                </select>
+              </div>
+            </div>
+            <Button
+              onClick={saveMomoSettings}
+              disabled={savingMomo || !momoName.trim() || !momoNumber.trim()}
+              className="mt-3 bg-sb-green text-white hover:bg-sb-green-light"
+              size="sm"
+            >
+              {savingMomo ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Save className="mr-2 h-4 w-4" />
+              )}
+              Save Details
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Pending Commitment Fee Confirmations */}
+      {pendingCommitments.length > 0 && (
+        <div className="mt-8">
+          <h2 className="font-heading text-lg font-semibold text-sb-green-dark">
+            Pending Commitment Fee Payments
+            <span className="ml-2 text-sm font-normal text-muted-foreground">
+              ({pendingCommitments.length})
+            </span>
+          </h2>
+          <div className="mt-4 space-y-3">
+            {pendingCommitments.map((m) => {
+              const initials = m.full_name
+                .split(" ")
+                .map((n) => n[0])
+                .join("")
+                .toUpperCase()
+                .slice(0, 2);
+
+              return (
+                <Card key={m.id} className="border-sb-gold/30 bg-white">
+                  <CardContent className="flex items-center gap-4 py-4">
+                    <Avatar className="h-10 w-10 border border-sb-cream-dark">
+                      {m.photo_url && (
+                        <AvatarImage src={m.photo_url} alt={m.full_name} />
+                      )}
+                      <AvatarFallback className="bg-sb-green text-xs font-semibold text-sb-gold">
+                        {initials}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold text-sb-green-dark">
+                        {m.full_name}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Claims to have paid GHS 100 commitment fee
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {m.phone_number}
+                      </p>
+                    </div>
+                    <Button
+                      size="sm"
+                      onClick={() => confirmCommitmentFee(m.id)}
+                      disabled={confirmingFee === m.id}
+                      className="bg-sb-gold text-white hover:bg-sb-gold-dark"
+                    >
+                      {confirmingFee === m.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <>
+                          <CheckCircle2 className="mr-1 h-4 w-4" />
+                          Confirm Paid
+                        </>
+                      )}
+                    </Button>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Pending Approvals */}
       <div className="mt-8">

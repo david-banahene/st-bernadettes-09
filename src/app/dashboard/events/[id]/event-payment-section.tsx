@@ -70,20 +70,21 @@ export function EventPaymentSection({
 
     setMyPayment(myPay);
 
-    // Get admin's MoMo details (from the admin member record)
-    const { data: admin } = await supabase
-      .from("members")
-      .select("full_name, phone_number")
-      .eq("role", "admin")
-      .limit(1)
-      .maybeSingle();
+    // Get MoMo collection details from app_settings
+    const { data: settings } = await supabase
+      .from("app_settings")
+      .select("key, value")
+      .in("key", ["momo_name", "momo_number", "momo_network"]);
 
-    if (admin) {
-      setAdminMomo({
-        name: admin.full_name,
-        number: admin.phone_number,
-        network: "MTN MoMo",
-      });
+    if (settings && settings.length > 0) {
+      const map = Object.fromEntries(settings.map((s) => [s.key, s.value]));
+      if (map.momo_name && map.momo_name !== "Not Set") {
+        setAdminMomo({
+          name: map.momo_name,
+          number: map.momo_number || "",
+          network: map.momo_network || "MTN MoMo",
+        });
+      }
     }
 
     // If leader/admin, load all payments for this event
