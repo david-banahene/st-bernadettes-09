@@ -323,6 +323,25 @@ GRACE PERIODS: Commitment fee = immediate wall. Past-month dues = 3 days. Curren
 - DONE: All existing and new members must sign (admin exempt)
 - DONE: Legally valid under Ghana's Electronic Transactions Act 2008 (Act 772)
 
+### COMPLETED: Financial Reports & PDF Export (Post-Launch)
+- DONE: Admin reports page (src/app/dashboard/admin/reports/page.tsx)
+  - Three report tabs: Dues by Month, Event Payments, Member Summary
+  - Each tab shows live data preview table + stats cards
+  - "Download PDF" generates professional branded PDF with:
+    - Dark green header bar with logo circle, association name, motto, location
+    - Gold accent lines, report title, date/period subtitle
+    - Summary stat cards row (total, paid, pending, collected)
+    - Full data table with alternating row colors, proper column alignment
+    - Footer on every page: generation date, association name, page numbers
+    - Total records + total amount summary row at bottom
+  - Dues Report: select any month, see who paid/pending, download PDF
+  - Event Report: select any event with payment, see who paid, download PDF
+  - Member Summary: all-time financial overview per member (commitment, dues, events, standing, agreement)
+  - PDF library loads on-demand (dynamic import) so it never affects app load speed
+  - Quick link card added to Admin Panel alongside other admin actions
+  - Packages: jspdf + jspdf-autotable (table-heavy PDF generation)
+  - Zero cost: PDF generated client-side in browser, nothing stored on server
+
 ### COMPLETED: Association Logo Recreation (Post-Launch)
 - DONE: Recreated original logo from constitution PDF as SVG
   - Circular dark green badge with gold outer border ring

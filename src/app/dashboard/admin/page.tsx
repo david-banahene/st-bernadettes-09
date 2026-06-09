@@ -24,6 +24,7 @@ import {
   Smartphone,
   Save,
   FileCheck,
+  FileText,
 } from "lucide-react";
 
 interface Stats {
@@ -358,7 +359,7 @@ export default function AdminPage() {
       </div>
 
       {/* Quick Links */}
-      <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Link href="/dashboard/admin/members">
           <Card className="cursor-pointer border-sb-cream-dark bg-white transition-all hover:-translate-y-0.5 hover:shadow-md">
             <CardContent className="flex items-center justify-between py-4">
@@ -408,6 +409,25 @@ export default function AdminPage() {
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {stats?.upcomingEvents} upcoming
+                  </p>
+                </div>
+              </div>
+              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link href="/dashboard/admin/reports">
+          <Card className="cursor-pointer border-sb-cream-dark bg-white transition-all hover:-translate-y-0.5 hover:shadow-md">
+            <CardContent className="flex items-center justify-between py-4">
+              <div className="flex items-center gap-3">
+                <FileText className="h-5 w-5 text-sb-gold-dark" />
+                <div>
+                  <p className="text-sm font-semibold text-sb-green-dark">
+                    Financial Reports
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    PDF export, dues, events
                   </p>
                 </div>
               </div>
