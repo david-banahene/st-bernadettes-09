@@ -14,6 +14,7 @@ import {
   Shield,
   UserCheck,
   UserX,
+  FileCheck,
 } from "lucide-react";
 
 interface Member {
@@ -27,6 +28,7 @@ interface Member {
   membership_status: string;
   good_standing: boolean;
   commitment_fee_paid: boolean;
+  signed_agreement_at: string | null;
   created_at: string;
 }
 
@@ -198,6 +200,16 @@ export default function AdminMembersPage() {
                       {m.good_standing && (
                         <Badge className="bg-sb-green/10 text-[10px] text-sb-green">
                           Good Standing
+                        </Badge>
+                      )}
+                      {m.signed_agreement_at ? (
+                        <Badge className="bg-green-50 text-[10px] text-green-600">
+                          <FileCheck className="mr-0.5 h-2.5 w-2.5" />
+                          Signed
+                        </Badge>
+                      ) : (
+                        <Badge className="bg-amber-50 text-[10px] text-amber-600">
+                          Not Signed
                         </Badge>
                       )}
                     </div>

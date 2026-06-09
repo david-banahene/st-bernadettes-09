@@ -23,6 +23,7 @@ import {
   Clock,
   Smartphone,
   Save,
+  FileCheck,
 } from "lucide-react";
 
 interface Stats {
@@ -30,6 +31,7 @@ interface Stats {
   activeMembers: number;
   pendingMembers: number;
   goodStandingCount: number;
+  signedAgreementCount: number;
   upcomingEvents: number;
   pendingQuestions: number;
   pendingWelfare: number;
@@ -99,6 +101,11 @@ export default function AdminPage() {
       .select("*", { count: "exact", head: true })
       .eq("good_standing", true);
 
+    const { count: signedAgreementCount } = await supabase
+      .from("members")
+      .select("*", { count: "exact", head: true })
+      .not("signed_agreement_at", "is", null);
+
     const { count: upcomingEvents } = await supabase
       .from("events")
       .select("*", { count: "exact", head: true })
@@ -119,6 +126,7 @@ export default function AdminPage() {
       activeMembers: activeMembers ?? 0,
       pendingMembers: pendingCount ?? 0,
       goodStandingCount: goodStandingCount ?? 0,
+      signedAgreementCount: signedAgreementCount ?? 0,
       upcomingEvents: upcomingEvents ?? 0,
       pendingQuestions: pendingQuestions ?? 0,
       pendingWelfare: pendingWelfare ?? 0,
@@ -274,7 +282,7 @@ export default function AdminPage() {
       </div>
 
       {/* Stats Grid */}
-      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-6 grid gap-4 grid-cols-2 lg:grid-cols-5">
         <Card className="border-sb-cream-dark bg-white">
           <CardContent className="flex items-center gap-4 pt-6">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-sb-green/8 text-sb-green">
@@ -326,6 +334,23 @@ export default function AdminPage() {
               <p className="text-xs text-muted-foreground">Good Standing</p>
               <p className="text-xl font-bold text-sb-green-dark">
                 {stats?.goodStandingCount}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-sb-cream-dark bg-white">
+          <CardContent className="flex items-center gap-4 pt-6">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-500/8 text-green-600">
+              <FileCheck className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Agreement Signed</p>
+              <p className="text-xl font-bold text-sb-green-dark">
+                {stats?.signedAgreementCount}{" "}
+                <span className="text-xs font-normal text-muted-foreground">
+                  of {stats?.totalMembers}
+                </span>
               </p>
             </div>
           </CardContent>

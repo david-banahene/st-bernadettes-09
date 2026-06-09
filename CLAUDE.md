@@ -297,6 +297,42 @@ HOW IT WORKS:
 APPLIES TO: Monthly dues, commitment fees, event payments
 GRACE PERIODS: Commitment fee = immediate wall. Past-month dues = 3 days. Current-month = 14 days.
 
+### COMPLETED: Membership Agreement Signing System (Post-Launch)
+- DONE: Digital membership agreement signing flow (3-step wizard)
+  - Full-screen agreement wall blocks non-admin approved members until they sign
+  - Gate order: Login > Approval > AGREEMENT WALL > Payment Wall > Dashboard
+  - Step 1: Review 5 constitutional sections (card accordion with progress tracking)
+    - Membership, Good Standing, Financial Obligations, Welfare & Benefits, Discipline & Forfeiture
+    - Each section must be expanded at least once before proceeding
+    - Progress bar shows "X of 5 sections reviewed"
+    - Green checkmarks appear on read sections
+  - Step 2: Signature pad (finger/mouse drawing on HTML5 Canvas)
+    - Checkbox: "I, [Name], have read and agree to abide by the Constitution..."
+    - Both signature and checkbox required to submit
+  - Step 3: Celebration screen with confetti, animated checkmark, membership card
+    - WhatsApp share via Web Share API
+    - "Continue to Dashboard" button (refreshes page to pass gate)
+  - Component: src/components/agreement-wall.tsx
+  - SQL migration: supabase/create-agreement-system.sql (ACTION REQUIRED: run in Supabase SQL Editor)
+  - Database: signed_agreement_at (timestamptz) + signature_url (text) columns on members table
+  - Storage: member-signatures bucket in Supabase Storage
+  - Packages: react-signature-canvas, signature_pad, canvas-confetti, pdf-lib
+- DONE: Admin visibility
+  - Manage Members page: "Signed" (green) / "Not Signed" (amber) badges on each member
+  - Admin Dashboard: "Agreement Signed: X of Y" stat card
+- DONE: All existing and new members must sign (admin exempt)
+- DONE: Legally valid under Ghana's Electronic Transactions Act 2008 (Act 772)
+
+### COMPLETED: Association Logo Recreation (Post-Launch)
+- DONE: Recreated original logo from constitution PDF as SVG
+  - Circular dark green badge with gold outer border ring
+  - "SB" in gold serif at top, open book icon (cream) in center, "2009" at bottom
+  - Green wave/hill behind book, inner subtle gold ring for depth
+  - SVG with textPath for logo.svg, positioned text for PWA icons
+- DONE: Updated PWA icons (icon-192.svg, icon-512.svg) with new badge design
+- DONE: Updated navbar logo (desktop + mobile) to use SVG instead of CSS circle
+- DONE: Updated OG/Twitter images with badge logo design (Satori-compatible)
+
 ---
 
 ## Tech Stack
@@ -307,6 +343,9 @@ GRACE PERIODS: Commitment fee = immediate wall. Past-month dues = 3 days. Curren
 - Resend (email notifications) - free tier, 100/day
 - Sonner (toast notifications) - via shadcn/ui
 - Manual MoMo payment tracking (no Paystack - see Payment System Decision)
+- react-signature-canvas + signature_pad (digital signature capture)
+- pdf-lib (signed agreement PDF generation)
+- canvas-confetti (celebration animations)
 - Service worker for offline support + fast repeat loads
 - Fonts: Playfair Display (headings), Inter (body)
 

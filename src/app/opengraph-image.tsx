@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 
-// Open Graph image matching the app's home screen icon style:
-// Dark green background, gold SB logo, cream text
+// Open Graph image with the association's badge logo
+// Dark green background, gold accents, matching the PWA home screen style
 export const runtime = "edge";
 export const alt = "St. Bernadette's '09 Association";
 export const size = { width: 1200, height: 630 };
@@ -35,41 +35,88 @@ export default async function Image() {
           }}
         />
 
-        {/* Logo circle */}
+        {/* Logo badge circle */}
         <div
           style={{
-            width: "140px",
-            height: "140px",
-            borderRadius: "70px",
-            backgroundColor: "#0D2818",
-            border: "3px solid rgba(200, 150, 46, 0.5)",
+            width: "160px",
+            height: "160px",
+            borderRadius: "80px",
+            backgroundColor: "#1B4332",
+            border: "4px solid #C8962E",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             flexDirection: "column",
-            marginBottom: "28px",
+            marginBottom: "24px",
+            position: "relative",
           }}
         >
+          {/* Inner ring */}
+          <div
+            style={{
+              position: "absolute",
+              width: "140px",
+              height: "140px",
+              borderRadius: "70px",
+              border: "1.5px solid rgba(200, 150, 46, 0.35)",
+              display: "flex",
+            }}
+          />
+          {/* SB text */}
           <span
             style={{
-              fontSize: "56px",
+              fontSize: "42px",
               fontWeight: "bold",
               color: "#C8962E",
               fontFamily: "serif",
               lineHeight: 1,
+              letterSpacing: "4px",
+              marginTop: "-8px",
             }}
           >
             SB
           </span>
-          <span
+          {/* Book icon representation */}
+          <div
             style={{
-              fontSize: "22px",
-              color: "#FAF6F0",
-              fontFamily: "sans-serif",
-              marginTop: "2px",
+              display: "flex",
+              gap: "2px",
+              marginTop: "4px",
+              marginBottom: "4px",
             }}
           >
-            &apos;09
+            <div
+              style={{
+                width: "28px",
+                height: "22px",
+                backgroundColor: "#FAF6F0",
+                borderRadius: "2px 0 0 2px",
+                transform: "skewY(-2deg)",
+                display: "flex",
+              }}
+            />
+            <div
+              style={{
+                width: "28px",
+                height: "22px",
+                backgroundColor: "#FAF6F0",
+                borderRadius: "0 2px 2px 0",
+                transform: "skewY(2deg)",
+                display: "flex",
+              }}
+            />
+          </div>
+          {/* 2009 text */}
+          <span
+            style={{
+              fontSize: "16px",
+              fontWeight: "bold",
+              color: "#C8962E",
+              fontFamily: "serif",
+              letterSpacing: "2px",
+            }}
+          >
+            2009
           </span>
         </div>
 

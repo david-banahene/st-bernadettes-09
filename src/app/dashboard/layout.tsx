@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { PaymentWall } from "@/components/payment-wall";
+import { AgreementWall } from "@/components/agreement-wall";
 import { Toaster } from "@/components/ui/sonner";
 
 // This layout wraps all /dashboard pages. It checks if the user is
@@ -22,20 +23,23 @@ export default async function DashboardLayout({
     redirect("/login");
   }
 
-  // Load member profile with payment fields
+  // Load member profile with payment and agreement fields
   const { data: member } = await supabase
     .from("members")
     .select(
-      "full_name, role, photo_url, membership_status, good_standing, commitment_fee_paid, commitment_fee_pending"
+      "full_name, role, photo_url, membership_status, good_standing, commitment_fee_paid, commitment_fee_pending, signed_agreement_at"
     )
     .eq("id", user.id)
     .single();
 
-  // Determine if the payment wall should show
-  // Show wall if: member is active but has NOT paid commitment fee
+  // Determine if the agreement wall should show
+  // Show agreement wall if: member is approved but has NOT signed the agreement
   // Admin is always exempt (needs full access to manage the app)
   const isAdmin = member?.role === "admin";
   const isApproved = member?.membership_status === "active" || member?.membership_status === "restricted";
+  const needsAgreement = !isAdmin && isApproved && !member?.signed_agreement_at;
+
+  // Determine if the payment wall should show (only after agreement is signed)
   const needsPaymentWall =
     !isAdmin &&
     isApproved &&
@@ -77,8 +81,16 @@ export default async function DashboardLayout({
 
   return (
     <div className="flex min-h-[calc(100vh-4rem)]">
+      {/* Agreement Wall - blocks everything until member signs the constitution */}
+      {needsAgreement && (
+        <AgreementWall
+          memberId={user.id}
+          memberName={member?.full_name || "Member"}
+        />
+      )}
+
       {/* Payment Wall - blocks everything if member has unpaid obligations */}
-      {showPaymentWall && (
+      {!needsAgreement && showPaymentWall && (
         <PaymentWall
           memberId={user.id}
           memberName={member?.full_name || "Member"}
@@ -87,7 +99,7 @@ export default async function DashboardLayout({
         />
       )}
 
-      {!showPaymentWall && (
+      {!needsAgreement && !showPaymentWall && (
         <>
           <DashboardSidebar
             memberName={member?.full_name || "Member"}

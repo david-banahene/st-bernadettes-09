@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 
-// Twitter/X card image - same dark green design as the OG image
+// Twitter/X card image - same design as the OG image with badge logo
 export const runtime = "edge";
 export const alt = "St. Bernadette's '09 Association";
 export const size = { width: 1200, height: 630 };
@@ -32,42 +32,88 @@ export default async function Image() {
             display: "flex",
           }}
         />
+
+        {/* Logo badge circle */}
         <div
           style={{
-            width: "140px",
-            height: "140px",
-            borderRadius: "70px",
-            backgroundColor: "#0D2818",
-            border: "3px solid rgba(200, 150, 46, 0.5)",
+            width: "160px",
+            height: "160px",
+            borderRadius: "80px",
+            backgroundColor: "#1B4332",
+            border: "4px solid #C8962E",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             flexDirection: "column",
-            marginBottom: "28px",
+            marginBottom: "24px",
+            position: "relative",
           }}
         >
+          <div
+            style={{
+              position: "absolute",
+              width: "140px",
+              height: "140px",
+              borderRadius: "70px",
+              border: "1.5px solid rgba(200, 150, 46, 0.35)",
+              display: "flex",
+            }}
+          />
           <span
             style={{
-              fontSize: "56px",
+              fontSize: "42px",
               fontWeight: "bold",
               color: "#C8962E",
               fontFamily: "serif",
               lineHeight: 1,
+              letterSpacing: "4px",
+              marginTop: "-8px",
             }}
           >
             SB
           </span>
-          <span
+          <div
             style={{
-              fontSize: "22px",
-              color: "#FAF6F0",
-              fontFamily: "sans-serif",
-              marginTop: "2px",
+              display: "flex",
+              gap: "2px",
+              marginTop: "4px",
+              marginBottom: "4px",
             }}
           >
-            &apos;09
+            <div
+              style={{
+                width: "28px",
+                height: "22px",
+                backgroundColor: "#FAF6F0",
+                borderRadius: "2px 0 0 2px",
+                transform: "skewY(-2deg)",
+                display: "flex",
+              }}
+            />
+            <div
+              style={{
+                width: "28px",
+                height: "22px",
+                backgroundColor: "#FAF6F0",
+                borderRadius: "0 2px 2px 0",
+                transform: "skewY(2deg)",
+                display: "flex",
+              }}
+            />
+          </div>
+          <span
+            style={{
+              fontSize: "16px",
+              fontWeight: "bold",
+              color: "#C8962E",
+              fontFamily: "serif",
+              letterSpacing: "2px",
+            }}
+          >
+            2009
           </span>
         </div>
+
         <div
           style={{
             fontSize: "52px",
@@ -80,6 +126,7 @@ export default async function Image() {
         >
           St. Bernadette&apos;s &apos;09 Association
         </div>
+
         <div
           style={{
             width: "80px",
@@ -91,6 +138,7 @@ export default async function Image() {
             display: "flex",
           }}
         />
+
         <div
           style={{
             fontSize: "26px",
@@ -102,6 +150,7 @@ export default async function Image() {
         >
           One Year Group, One Family
         </div>
+
         <div
           style={{
             fontSize: "18px",
@@ -114,6 +163,7 @@ export default async function Image() {
         >
           Unity &bull; Support &bull; Progress
         </div>
+
         <div
           style={{
             position: "absolute",

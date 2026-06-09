@@ -1,5 +1,29 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="64" fill="#1B4332"/>
-  <text x="256" y="280" text-anchor="middle" font-family="serif" font-weight="bold" font-size="192" fill="#C8962E">SB</text>
-  <text x="256" y="390" text-anchor="middle" font-family="sans-serif" font-size="64" fill="#FAF6F0">'09</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 200 200">
+  <!-- Background fill for maskable icon safe zone -->
+  <rect width="200" height="200" fill="#1B4332" />
+
+  <!-- Outer gold border ring -->
+  <circle cx="100" cy="100" r="90" fill="none" stroke="#C8962E" stroke-width="4" />
+
+  <!-- Dark green filled circle -->
+  <circle cx="100" cy="100" r="88" fill="#1B4332" />
+
+  <!-- Inner subtle gold ring -->
+  <circle cx="100" cy="100" r="80" fill="none" stroke="#C8962E" stroke-width="1.2" opacity="0.35" />
+
+  <!-- Green wave/hill behind book -->
+  <path d="M 52,116 Q 100,92 148,116 L 148,134 Q 100,110 52,134 Z" fill="#2D6A4F" />
+
+  <!-- Open book - left page -->
+  <path d="M 100,96 L 100,124 Q 84,120 68,124 L 68,98 Q 84,94 100,96 Z" fill="#FAF6F0" />
+  <!-- Open book - right page -->
+  <path d="M 100,96 L 100,124 Q 116,120 132,124 L 132,98 Q 116,94 100,96 Z" fill="#FAF6F0" />
+  <!-- Book spine -->
+  <line x1="100" y1="95" x2="100" y2="125" stroke="#C8962E" stroke-width="1.5" opacity="0.6" />
+
+  <!-- "SB" text at top -->
+  <text x="100" y="72" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-weight="bold" font-size="30" fill="#C8962E" letter-spacing="4">SB</text>
+
+  <!-- "2009" text at bottom -->
+  <text x="100" y="154" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-weight="bold" font-size="16" fill="#C8962E" letter-spacing="2">2009</text>
 </svg>
