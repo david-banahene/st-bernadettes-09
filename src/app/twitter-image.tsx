@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 
-// Twitter/X card image - same design as the Open Graph image
+// Twitter/X card image - same dark green design as the OG image
 export const runtime = "edge";
 export const alt = "St. Bernadette's '09 Association";
 export const size = { width: 1200, height: 630 };
@@ -17,7 +17,7 @@ export default async function Image() {
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          backgroundColor: "#FAF6F0",
+          backgroundColor: "#1B4332",
           position: "relative",
         }}
       >
@@ -27,50 +27,52 @@ export default async function Image() {
             top: 0,
             left: 0,
             right: 0,
-            height: "8px",
-            backgroundColor: "#1B4332",
+            height: "6px",
+            backgroundColor: "#C8962E",
             display: "flex",
           }}
         />
         <div
           style={{
-            position: "absolute",
-            bottom: 0,
-            left: 0,
-            right: 0,
-            height: "8px",
-            backgroundColor: "#1B4332",
-            display: "flex",
-          }}
-        />
-        <div
-          style={{
-            width: "120px",
-            height: "120px",
-            borderRadius: "60px",
-            backgroundColor: "#1B4332",
+            width: "140px",
+            height: "140px",
+            borderRadius: "70px",
+            backgroundColor: "#0D2818",
+            border: "3px solid rgba(200, 150, 46, 0.5)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            marginBottom: "24px",
+            flexDirection: "column",
+            marginBottom: "28px",
           }}
         >
           <span
             style={{
-              fontSize: "48px",
+              fontSize: "56px",
               fontWeight: "bold",
               color: "#C8962E",
               fontFamily: "serif",
+              lineHeight: 1,
             }}
           >
             SB
           </span>
+          <span
+            style={{
+              fontSize: "22px",
+              color: "#FAF6F0",
+              fontFamily: "sans-serif",
+              marginTop: "2px",
+            }}
+          >
+            &apos;09
+          </span>
         </div>
         <div
           style={{
-            fontSize: "48px",
+            fontSize: "52px",
             fontWeight: "bold",
-            color: "#1B4332",
+            color: "#FAF6F0",
             textAlign: "center",
             lineHeight: 1.2,
             display: "flex",
@@ -83,17 +85,17 @@ export default async function Image() {
             width: "80px",
             height: "4px",
             backgroundColor: "#C8962E",
-            marginTop: "16px",
-            marginBottom: "16px",
+            marginTop: "20px",
+            marginBottom: "20px",
             borderRadius: "2px",
             display: "flex",
           }}
         />
         <div
           style={{
-            fontSize: "24px",
-            color: "#1B4332",
-            opacity: 0.7,
+            fontSize: "26px",
+            color: "#FAF6F0",
+            opacity: 0.8,
             textAlign: "center",
             display: "flex",
           }}
@@ -104,8 +106,8 @@ export default async function Image() {
           style={{
             fontSize: "18px",
             color: "#C8962E",
-            marginTop: "12px",
-            letterSpacing: "4px",
+            marginTop: "16px",
+            letterSpacing: "6px",
             textTransform: "uppercase",
             display: "flex",
           }}
@@ -114,15 +116,15 @@ export default async function Image() {
         </div>
         <div
           style={{
-            fontSize: "16px",
-            color: "#1B4332",
-            opacity: 0.5,
-            marginTop: "24px",
+            position: "absolute",
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: "6px",
+            backgroundColor: "#C8962E",
             display: "flex",
           }}
-        >
-          Tafo Nhyiaeso, Kumasi, Ghana
-        </div>
+        />
       </div>
     ),
     {
