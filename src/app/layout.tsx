@@ -34,7 +34,7 @@ export const metadata: Metadata = {
     "JHS",
     "school association",
   ],
-  metadataBase: new URL("https://stbernadettes09.org"),
+  metadataBase: new URL("https://sbfamily.vercel.app"),
   openGraph: {
     type: "website",
     siteName: "St. Bernadette's '09 Association",
