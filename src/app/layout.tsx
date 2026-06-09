@@ -44,7 +44,7 @@ export const metadata: Metadata = {
     locale: "en_GH",
   },
   twitter: {
-    card: "summary",
+    card: "summary_large_image",
     title: "St. Bernadette's '09 Association",
     description:
       "One Year Group, One Family. St. Bernadette's JHS 2009 Year Group, Tafo Nhyiaeso, Kumasi, Ghana.",
