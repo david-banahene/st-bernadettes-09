@@ -87,7 +87,7 @@ Before doing anything, read:
   - Caption support
 - DONE: Dashboard updated with live upcoming events count and event list cards
 - DONE: All routes compile with zero errors
-- ACTION REQUIRED: Run supabase/fix-event-payment-update.sql in Supabase SQL Editor
+- DONE: supabase/fix-event-payment-update.sql executed in Supabase SQL Editor
   (adds UPDATE policy so leaders/admin can confirm payments)
 
 ### COMPLETED: Phase 5 - Q&A System + Welfare Requests
@@ -147,7 +147,7 @@ Before doing anything, read:
   - "Update Standing" button recalculates good_standing for all members
     (requires commitment_fee_paid AND all dues paid)
 - DONE: All three admin pages compile with zero errors
-- ACTION REQUIRED: Run supabase/create-monthly-dues.sql in Supabase SQL Editor
+- DONE: supabase/create-monthly-dues.sql executed in Supabase SQL Editor
   (creates monthly_dues table with RLS policies)
 
 ### COMPLETED: Phase 8 - Email Notifications + Polish
@@ -219,7 +219,7 @@ Before doing anything, read:
   - Icons: cream at 70% opacity (inactive), gold with pill highlight (active)
   - Tap feedback: active:scale-95, labels bumped to 11px
 - DONE (post-launch): Notification badge system (red dots on tabs for new content)
-  - SQL: supabase/create-notification-badges.sql (ACTION REQUIRED: run in Supabase SQL Editor)
+  - SQL: supabase/create-notification-badges.sql (EXECUTED)
   - Hook: src/hooks/use-badge-notifications.ts
   - Timestamp comparison approach: content_updates + user_section_reads tables
   - Auto-clear on page visit, dots on both mobile tabs and desktop sidebar
@@ -313,7 +313,7 @@ GRACE PERIODS: Commitment fee = immediate wall. Past-month dues = 3 days. Curren
     - WhatsApp share via Web Share API
     - "Continue to Dashboard" button (refreshes page to pass gate)
   - Component: src/components/agreement-wall.tsx
-  - SQL migration: supabase/create-agreement-system.sql (ACTION REQUIRED: run in Supabase SQL Editor)
+  - SQL migration: supabase/create-agreement-system.sql (EXECUTED)
   - Database: signed_agreement_at (timestamptz) + signature_url (text) columns on members table
   - Storage: member-signatures bucket in Supabase Storage
   - Packages: react-signature-canvas, signature_pad, canvas-confetti, pdf-lib
@@ -365,6 +365,7 @@ GRACE PERIODS: Commitment fee = immediate wall. Past-month dues = 3 days. Curren
 - react-signature-canvas + signature_pad (digital signature capture)
 - pdf-lib (signed agreement PDF generation)
 - canvas-confetti (celebration animations)
+- jspdf + jspdf-autotable (financial report PDF generation)
 - Service worker for offline support + fast repeat loads
 - Fonts: Playfair Display (headings), Inter (body)
 

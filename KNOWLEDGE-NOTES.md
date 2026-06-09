@@ -453,4 +453,75 @@ members owe from months before the app existed.
 
 ---
 
+## 21. Digital Membership Agreement Signing
+
+**Problem:** The constitution (Article 5.2) requires members to agree to obey the constitution. Article 21 requires the Association to keep signed member acceptance forms. Previously done manually on paper.
+
+**Solution:** A 3-step in-app signing wizard that gates dashboard access.
+
+**Member journey order:**
+```
+Register > Admin Approves > AGREEMENT WALL > Payment Wall > Dashboard
+```
+
+**Step 1 - Review:** 5 constitutional sections presented as expandable accordion cards (Membership, Good Standing, Financial Obligations, Welfare & Benefits, Discipline & Forfeiture). Progress tracked. All 5 must be opened before proceeding.
+
+**Step 2 - Sign:** HTML5 Canvas signature pad (`react-signature-canvas` wrapping `signature_pad`). Bezier curve interpolation produces natural-looking signatures. Agreement checkbox required.
+
+**Step 3 - Celebrate:** Confetti burst (`canvas-confetti`), animated SVG checkmark (Framer Motion `pathLength`), membership card, WhatsApp share via Web Share API.
+
+**Storage:**
+- Signature PNG uploaded to `member-signatures` Supabase Storage bucket
+- `signed_agreement_at` timestamp and `signature_url` on members table
+- ~15 MB total for 50 members (well within free tier)
+
+**Legal basis:** Ghana's Electronic Transactions Act 2008 (Act 772) recognizes electronic signatures when there is clear intent and consent.
+
+---
+
+## 22. Client-Side PDF Report Generation
+
+**Problem:** The Association needs professional financial records that can be downloaded, printed, or shared at any time.
+
+**Solution:** Admin reports page with three tabs and branded PDF export.
+
+**Library choice: `jspdf` + `jspdf-autotable`**
+- Purpose-built for tabular data (dues lists, payment records)
+- ~200 KB total bundle, loaded on-demand via dynamic import
+- Handles pagination, alternating row colors, column widths automatically
+- `pdf-lib` (also installed) is better for template-based work (signatures, certificates) but terrible for building tables from scratch
+
+**Why not `@react-pdf/renderer`:** 1.2 MB bundle, designed for complex multi-page React layouts. Overkill for data tables.
+
+**Three report types:**
+1. **Dues by Month:** Select month, see who paid/pending, download PDF
+2. **Event Payments:** Select event, see payment records, download PDF
+3. **Member Summary:** All-time financial overview per member
+
+**PDF design:**
+- Dark green header bar with logo, association name, motto, location
+- Gold accent lines, summary stat cards, professional data tables
+- Alternating row shading, footer with generation date and page numbers
+- Total records + total amount summary at bottom
+
+**Free tier impact: zero.** PDF generated entirely in the browser. No server resources, no API calls, no storage consumed.
+
+---
+
+## 23. SVG Logo Design for PWAs
+
+**Problem:** The original association logo (circular badge with open book) existed only in the constitution PDF. The app used a simplified CSS text circle.
+
+**Solution:** Recreated the logo as SVG with different versions for different contexts.
+
+**Two SVG approaches needed:**
+1. **`<textPath>` version** (`logo.svg`): Text curves along the circle arc. Looks best in browsers. Does NOT work in Next.js ImageResponse (Satori engine does not support `<textPath>`).
+2. **Positioned text version** (`icon-192.svg`, `icon-512.svg`): Text placed with `x`/`y` coordinates. Works everywhere including PWA home screens.
+
+**For OG/social images:** Since Satori cannot render SVG `<textPath>`, the logo is rebuilt using Satori-compatible HTML/CSS (divs, spans, flexbox) inside `opengraph-image.tsx`.
+
+**PWA maskable icon safe zone:** Critical content must fit within the central 80% of the icon (10% padding on every side). Circular badge designs naturally fit this constraint.
+
+---
+
 *Last updated: June 2026*
