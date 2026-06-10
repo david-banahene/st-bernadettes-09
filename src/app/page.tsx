@@ -15,6 +15,7 @@ import {
   BookOpen,
   ArrowRight,
 } from "lucide-react";
+import { NumberTicker } from "@/components/ui/number-ticker";
 
 const features = [
   {
@@ -182,6 +183,73 @@ export default function HomePage() {
               </Card>
             </BlurFade>
           ))}
+        </div>
+      </section>
+
+      {/* Stats Section */}
+      <section className="relative overflow-hidden bg-sb-green-dark">
+        <div className="mx-auto max-w-5xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
+          <BlurFade delay={0.1} inView>
+            <div className="flex flex-col items-center">
+              {/* Top ornament */}
+              <div className="flex items-center gap-3">
+                <div className="h-px w-10 bg-sb-gold/30" />
+                <div className="h-1.5 w-1.5 rounded-full bg-sb-gold" />
+                <div className="h-px w-10 bg-sb-gold/30" />
+              </div>
+
+              <p className="mt-5 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/35 sm:text-xs">
+                Our community in numbers
+              </p>
+
+              {/* Stats grid */}
+              <div className="mt-10 grid w-full grid-cols-2 gap-8 sm:grid-cols-4 sm:gap-4">
+                <div className="flex flex-col items-center text-center">
+                  <div className="font-heading text-4xl font-bold text-sb-gold sm:text-5xl">
+                    <NumberTicker value={2009} startValue={1990} delay={0.2} />
+                  </div>
+                  <p className="mt-2 text-[11px] font-medium uppercase tracking-[0.15em] text-white/40">
+                    Established
+                  </p>
+                </div>
+
+                <div className="flex flex-col items-center text-center">
+                  <div className="font-heading text-4xl font-bold text-sb-gold sm:text-5xl">
+                    <NumberTicker value={50} delay={0.4} />
+                    <span className="text-sb-gold/70">+</span>
+                  </div>
+                  <p className="mt-2 text-[11px] font-medium uppercase tracking-[0.15em] text-white/40">
+                    Members
+                  </p>
+                </div>
+
+                <div className="flex flex-col items-center text-center">
+                  <div className="font-heading text-4xl font-bold text-sb-gold sm:text-5xl">
+                    <NumberTicker value={new Date().getFullYear() - 2009} delay={0.6} />
+                  </div>
+                  <p className="mt-2 text-[11px] font-medium uppercase tracking-[0.15em] text-white/40">
+                    Years strong
+                  </p>
+                </div>
+
+                <div className="flex flex-col items-center text-center">
+                  <div className="font-heading text-4xl font-bold text-sb-gold sm:text-5xl">
+                    <NumberTicker value={9} delay={0.8} />
+                  </div>
+                  <p className="mt-2 text-[11px] font-medium uppercase tracking-[0.15em] text-white/40">
+                    Executive officers
+                  </p>
+                </div>
+              </div>
+
+              {/* Bottom ornament */}
+              <div className="mt-10 flex items-center gap-3">
+                <div className="h-px w-10 bg-sb-gold/30" />
+                <div className="h-1.5 w-1.5 rounded-full bg-sb-gold" />
+                <div className="h-px w-10 bg-sb-gold/30" />
+              </div>
+            </div>
+          </BlurFade>
         </div>
       </section>
 
