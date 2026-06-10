@@ -215,7 +215,7 @@ export default function HomePage() {
 
                 <div className="flex flex-col items-center text-center">
                   <div className="font-heading text-4xl font-bold text-sb-gold sm:text-5xl">
-                    <NumberTicker value={50} delay={0.4} className="text-sb-gold" />
+                    <NumberTicker value={50} delay={0.4} />
                     <span className="text-sb-gold/70">+</span>
                   </div>
                   <p className="mt-2 text-[11px] font-medium uppercase tracking-[0.15em] text-white/40">
@@ -225,7 +225,7 @@ export default function HomePage() {
 
                 <div className="flex flex-col items-center text-center">
                   <div className="font-heading text-4xl font-bold text-sb-gold sm:text-5xl">
-                    <NumberTicker value={new Date().getFullYear() - 2009} delay={0.6} className="text-sb-gold" />
+                    <NumberTicker value={new Date().getFullYear() - 2009} delay={0.6} />
                   </div>
                   <p className="mt-2 text-[11px] font-medium uppercase tracking-[0.15em] text-white/40">
                     Years strong
@@ -234,7 +234,7 @@ export default function HomePage() {
 
                 <div className="flex flex-col items-center text-center">
                   <div className="font-heading text-4xl font-bold text-sb-gold sm:text-5xl">
-                    <NumberTicker value={9} delay={0.8} className="text-sb-gold" />
+                    <NumberTicker value={9} delay={0.8} />
                   </div>
                   <p className="mt-2 text-[11px] font-medium uppercase tracking-[0.15em] text-white/40">
                     Executive officers
