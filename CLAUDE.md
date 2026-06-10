@@ -352,6 +352,26 @@ GRACE PERIODS: Commitment fee = immediate wall. Past-month dues = 3 days. Curren
 - DONE: Updated navbar logo (desktop + mobile) to use SVG instead of CSS circle
 - DONE: Updated OG/Twitter images with badge logo design (Satori-compatible)
 
+### COMPLETED: Premium Design Polish (Post-Launch)
+- DONE: Animated stats section on home page
+  - Dark green strip between "What We Offer" and "Join the Family" sections
+  - Gold ornamental dividers (line-dot-line motif) top and bottom
+  - "OUR COMMUNITY IN NUMBERS" subtle heading
+  - 4 stats: 2009 (Established), 50+ (Members), 17 (Years Strong), 9 (Executive Officers)
+  - NumberTicker animation on 50+, years, and officers (triggers on scroll into view)
+  - "Years strong" auto-updates each year via `new Date().getFullYear() - 2009`
+  - Fixed NumberTicker default text-black to inherit parent color (now uses gold)
+- DONE: Footer redesign with David Banahene copyright
+  - Centered gold name with decorative line accents
+  - "Unity . Support . Progress" motto above
+  - Hierarchical typography with tracking
+
+- DONE: Membership Journey stepper component (src/components/membership-journey.tsx)
+  - 5-phase progress stepper: Apply > Approval > Sign Agreement > Pay Fee > Full Access
+  - Two variants: full (vertical for register/dashboard) and compact (horizontal for walls)
+  - Placed on: registration page, dashboard pending banner, agreement wall, payment wall
+  - Solves core UX problem: members now always know where they are in the process
+
 ---
 
 ## Tech Stack
