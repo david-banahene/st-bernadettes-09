@@ -87,13 +87,20 @@ export function Footer() {
         </div>
 
         {/* Motto & Copyright */}
-        <div className="mt-10 border-t border-sb-green-light pt-6">
-          <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
-            <p className="text-center text-xs text-white/50">
-              &copy;&nbsp;{currentYear}&nbsp;St. Bernadette&apos;s &apos;09 Association. All rights reserved.
+        <div className="mt-10 border-t border-sb-gold/20 pt-6">
+          <div className="flex flex-col items-center gap-3">
+            <p className="text-center text-xs font-medium tracking-widest text-sb-gold/70">
+              Unity &middot; Support &middot; Progress
             </p>
-            <p className="text-center text-xs font-medium text-sb-gold/70">
-              Unity | Support | Progress
+            <div className="flex items-center gap-2">
+              <div className="h-px w-8 bg-sb-gold/30" />
+              <p className="text-center text-sm font-semibold tracking-wide text-sb-gold">
+                David Banahene
+              </p>
+              <div className="h-px w-8 bg-sb-gold/30" />
+            </div>
+            <p className="text-center text-[10px] tracking-wider text-white/40">
+              &copy; {currentYear} &middot; ALL RIGHTS RESERVED
             </p>
           </div>
         </div>
