@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { BlurFade } from "@/components/ui/blur-fade";
 import { Loader2, UserPlus, AlertCircle } from "lucide-react";
+import { MembershipJourney } from "@/components/membership-journey";
 import { PhoneInput } from "@/components/phone-input";
 
 export default function RegisterPage() {
@@ -137,7 +138,25 @@ export default function RegisterPage() {
       </section>
 
       <div className="mx-auto max-w-2xl px-4 py-10 sm:px-6 sm:py-14 lg:px-8">
+        {/* How It Works */}
         <BlurFade delay={0.1} inView>
+          <Card className="mb-6 border-sb-green/20 bg-sb-green-dark/[0.03]">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base text-sb-green-dark">
+                How Membership Works
+              </CardTitle>
+              <p className="text-xs text-muted-foreground">
+                Membership is completed in 5 phases. Submitting this form is
+                only the first step.
+              </p>
+            </CardHeader>
+            <CardContent>
+              <MembershipJourney currentStep={1} />
+            </CardContent>
+          </Card>
+        </BlurFade>
+
+        <BlurFade delay={0.2} inView>
           <Card className="border-sb-cream-dark bg-white">
             <CardHeader className="pb-4">
               <CardTitle className="flex items-center gap-2 text-base text-sb-green-dark">

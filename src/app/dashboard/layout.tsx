@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { PaymentWall } from "@/components/payment-wall";
 import { AgreementWall } from "@/components/agreement-wall";
+import { MembershipJourney } from "@/components/membership-journey";
 import { Toaster } from "@/components/ui/sonner";
 
 // This layout wraps all /dashboard pages. It checks if the user is
@@ -109,11 +110,17 @@ export default async function DashboardLayout({
           />
           <main className="flex-1 overflow-y-auto bg-sb-cream p-4 pb-20 sm:p-6 md:pb-6 lg:p-8">
             {member?.membership_status === "pending" && (
-              <div className="mb-6 rounded-lg border border-sb-gold/30 bg-sb-gold/5 p-4">
-                <p className="text-sm text-sb-gold-dark">
-                  Your membership is pending approval. Some features may be
-                  limited until a leader approves your application.
+              <div className="mb-6 rounded-xl border border-sb-gold/30 bg-white p-5 shadow-sm">
+                <h2 className="text-sm font-semibold text-sb-green-dark">
+                  Your Membership Journey
+                </h2>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Your application has been received. Leadership will review
+                  it shortly. You will be notified when approved.
                 </p>
+                <div className="mt-4">
+                  <MembershipJourney currentStep={2} />
+                </div>
               </div>
             )}
             {children}

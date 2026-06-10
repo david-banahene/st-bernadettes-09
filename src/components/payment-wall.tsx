@@ -15,6 +15,7 @@ import {
   AlertTriangle,
   CalendarCheck,
 } from "lucide-react";
+import { MembershipJourney } from "@/components/membership-journey";
 
 interface Props {
   memberId: string;
@@ -147,6 +148,11 @@ export function PaymentWall({
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-sb-cream">
       <div className="mx-auto max-w-lg px-4 py-8">
+        {/* Journey context */}
+        <div className="mb-4 rounded-xl bg-sb-green-dark p-3">
+          <MembershipJourney currentStep={4} compact />
+        </div>
+
         {/* Header */}
         <div className="text-center">
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-sb-gold/10">
@@ -326,11 +332,13 @@ export function PaymentWall({
         </div>
 
         {/* Footer note */}
-        <p className="mt-8 text-center text-xs text-muted-foreground">
-          After sending payment via MoMo, tap &quot;I Have Paid&quot; above.
-          Admin will confirm within 24 hours. If you have questions, use
-          WhatsApp to reach the leadership.
-        </p>
+        <div className="mt-8 rounded-lg border border-sb-gold/20 bg-sb-gold/5 p-4">
+          <p className="text-center text-xs font-medium text-sb-gold-dark">
+            After sending MoMo, tap &quot;I Have Paid&quot; above.
+            Do not stop here. Leadership will confirm your payment,
+            then your full dashboard opens automatically.
+          </p>
+        </div>
       </div>
     </div>
   );

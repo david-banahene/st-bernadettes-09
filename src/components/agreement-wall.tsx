@@ -19,6 +19,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import SignatureCanvas from "react-signature-canvas";
 import confetti from "canvas-confetti";
 import { createClient } from "@/lib/supabase/client";
+import { MembershipJourney } from "@/components/membership-journey";
 
 // ── Agreement sections from the Constitution ───────────────────────
 const AGREEMENT_SECTIONS = [
@@ -605,6 +606,11 @@ export function AgreementWall({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-sb-green-dark">
       <div className="w-full max-w-md mx-auto px-4 py-6 max-h-screen overflow-y-auto">
+        {/* Journey context */}
+        <div className="mb-4">
+          <MembershipJourney currentStep={3} compact />
+        </div>
+
         {/* Header with logo */}
         <div className="flex flex-col items-center gap-3 mb-6">
           <img
