@@ -206,7 +206,7 @@ export default function HomePage() {
               <div className="mt-10 grid w-full grid-cols-2 gap-8 sm:grid-cols-4 sm:gap-4">
                 <div className="flex flex-col items-center text-center">
                   <div className="font-heading text-4xl font-bold text-sb-gold sm:text-5xl">
-                    <NumberTicker value={2009} startValue={1990} delay={0.2} />
+                    2009
                   </div>
                   <p className="mt-2 text-[11px] font-medium uppercase tracking-[0.15em] text-white/40">
                     Established
