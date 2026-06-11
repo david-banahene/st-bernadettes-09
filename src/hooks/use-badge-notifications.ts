@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 
-// Sections that can show notification badges
 export type BadgeSection =
   | "events"
   | "announcements"
@@ -11,7 +10,6 @@ export type BadgeSection =
   | "welfare"
   | "admin";
 
-// Maps sections to their page paths
 const sectionPaths: Record<BadgeSection, string> = {
   events: "/dashboard/events",
   announcements: "/dashboard/announcements",
@@ -20,15 +18,16 @@ const sectionPaths: Record<BadgeSection, string> = {
   admin: "/dashboard/admin",
 };
 
-// Maps page paths back to sections (for auto-marking as read)
 const pathToSection: Record<string, BadgeSection> = Object.fromEntries(
   Object.entries(sectionPaths).map(([section, path]) => [path, section as BadgeSection])
 );
 
+const POLL_INTERVAL = 30_000;
+
 export function useBadgeNotifications(currentPath: string) {
   const [badges, setBadges] = useState<Record<string, boolean>>({});
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Fetch badge states: compare content_updates vs user_section_reads
   const fetchBadges = useCallback(async () => {
     const supabase = createClient();
     const {
@@ -36,18 +35,28 @@ export function useBadgeNotifications(currentPath: string) {
     } = await supabase.auth.getUser();
     if (!user) return;
 
-    // Get all section update timestamps
-    const { data: updates } = await supabase
+    const { data: updates, error: updatesError } = await supabase
       .from("content_updates")
       .select("section, last_updated_at");
 
-    // Get this user's read timestamps
-    const { data: reads } = await supabase
+    if (updatesError) {
+      console.error("[badges] Failed to fetch content_updates:", updatesError.message);
+      return;
+    }
+
+    const { data: reads, error: readsError } = await supabase
       .from("user_section_reads")
       .select("section, last_read_at")
       .eq("user_id", user.id);
 
-    if (!updates) return;
+    if (readsError) {
+      console.error("[badges] Failed to fetch user_section_reads:", readsError.message);
+    }
+
+    if (!updates || updates.length === 0) {
+      console.warn("[badges] content_updates table is empty or missing");
+      return;
+    }
 
     const readMap = new Map(
       (reads || []).map((r) => [r.section, new Date(r.last_read_at)])
@@ -57,14 +66,12 @@ export function useBadgeNotifications(currentPath: string) {
     for (const update of updates) {
       const lastRead = readMap.get(update.section);
       const lastUpdated = new Date(update.last_updated_at);
-      // Show badge if user has never visited OR new content since last visit
       newBadges[update.section] = !lastRead || lastUpdated > lastRead;
     }
 
     setBadges(newBadges);
   }, []);
 
-  // Mark a section as read (called when user visits a page)
   const markAsRead = useCallback(async (section: BadgeSection) => {
     const supabase = createClient();
     const {
@@ -72,7 +79,7 @@ export function useBadgeNotifications(currentPath: string) {
     } = await supabase.auth.getUser();
     if (!user) return;
 
-    await supabase.from("user_section_reads").upsert(
+    const { error } = await supabase.from("user_section_reads").upsert(
       {
         user_id: user.id,
         section,
@@ -81,11 +88,15 @@ export function useBadgeNotifications(currentPath: string) {
       { onConflict: "user_id,section" }
     );
 
-    // Clear the badge locally immediately
+    if (error) {
+      console.error("[badges] Failed to mark as read:", error.message);
+      return;
+    }
+
     setBadges((prev) => ({ ...prev, [section]: false }));
   }, []);
 
-  // Auto-mark current page as read when path changes
+  // Auto-mark current page as read
   useEffect(() => {
     const section = pathToSection[currentPath];
     if (section) {
@@ -93,12 +104,30 @@ export function useBadgeNotifications(currentPath: string) {
     }
   }, [currentPath, markAsRead]);
 
-  // Fetch badges on mount and when path changes
+  // Fetch on mount and path change
   useEffect(() => {
     fetchBadges();
   }, [currentPath, fetchBadges]);
 
-  // Check if a specific path has a badge
+  // Poll every 30 seconds for new content
+  useEffect(() => {
+    intervalRef.current = setInterval(fetchBadges, POLL_INTERVAL);
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, [fetchBadges]);
+
+  // Refetch when browser tab becomes visible again
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        fetchBadges();
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => document.removeEventListener("visibilitychange", handleVisibility);
+  }, [fetchBadges]);
+
   const hasBadge = useCallback(
     (path: string): boolean => {
       const section = pathToSection[path];
@@ -107,7 +136,6 @@ export function useBadgeNotifications(currentPath: string) {
     [badges]
   );
 
-  // Check if any "More" page has a badge
   const hasMoreBadge = useCallback((): boolean => {
     return (
       badges["questions"] === true ||
