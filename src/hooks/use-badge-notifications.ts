@@ -8,7 +8,9 @@ export type BadgeSection =
   | "announcements"
   | "questions"
   | "welfare"
-  | "admin";
+  | "admin"
+  | "minutes"
+  | "members";
 
 const sectionPaths: Record<BadgeSection, string> = {
   events: "/dashboard/events",
@@ -16,6 +18,8 @@ const sectionPaths: Record<BadgeSection, string> = {
   questions: "/dashboard/questions",
   welfare: "/dashboard/welfare",
   admin: "/dashboard/admin",
+  minutes: "/dashboard/minutes",
+  members: "/dashboard/members",
 };
 
 const pathToSection: Record<string, BadgeSection> = Object.fromEntries(
@@ -140,7 +144,8 @@ export function useBadgeNotifications(currentPath: string) {
     return (
       badges["questions"] === true ||
       badges["welfare"] === true ||
-      badges["admin"] === true
+      badges["admin"] === true ||
+      badges["minutes"] === true
     );
   }, [badges]);
 
