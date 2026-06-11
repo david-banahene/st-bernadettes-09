@@ -74,6 +74,16 @@ export function useBadgeNotifications(currentPath: string) {
     }
 
     setBadges(newBadges);
+
+    // Update PWA home screen badge count
+    const unreadCount = Object.values(newBadges).filter(Boolean).length;
+    if ("setAppBadge" in navigator) {
+      if (unreadCount > 0) {
+        navigator.setAppBadge(unreadCount).catch(() => {});
+      } else {
+        navigator.clearAppBadge().catch(() => {});
+      }
+    }
   }, []);
 
   const markAsRead = useCallback(async (section: BadgeSection) => {
