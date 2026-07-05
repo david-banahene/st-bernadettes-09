@@ -567,22 +567,23 @@ export function AgreementWall({
 
       if (uploadError) {
         console.error("Upload error:", uploadError);
-        // Continue even if upload fails - the timestamp is more important
+        alert(
+          "Could not save your signature. Please check your connection and try again."
+        );
+        setSubmitting(false);
+        return;
       }
-
-      // Get the public URL for the signature
-      const { data: urlData } = supabase.storage
-        .from("member-signatures")
-        .getPublicUrl(fileName);
 
       const now = new Date().toISOString();
 
-      // Update member record with signed timestamp and signature URL
+      // Store the storage path (not a public URL - the member-signatures
+      // bucket is private, so a signed URL must be generated on demand
+      // wherever this is displayed)
       const { error: updateError } = await supabase
         .from("members")
         .update({
           signed_agreement_at: now,
-          signature_url: urlData?.publicUrl || null,
+          signature_url: fileName,
         })
         .eq("id", memberId);
 

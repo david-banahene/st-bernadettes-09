@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { BirthdaySpotlight } from "@/components/birthday-spotlight";
 import Link from "next/link";
 import {
   CalendarDays,
@@ -12,6 +13,11 @@ import {
   UserCircle,
   ArrowRight,
 } from "lucide-react";
+
+const MONTH_ABBREVIATIONS = [
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+];
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -40,17 +46,34 @@ export default async function DashboardPage() {
     .neq("status", "cancelled");
 
   // Birthday celebrants this month
+  // date_of_birth is a plain "YYYY-MM-DD" date with no time component, so we
+  // read its month/day directly from the string rather than through a Date
+  // object - parsing a date-only string as UTC and then reading it back with
+  // local getters (.getMonth()/.getDate()) can shift the day by one whenever
+  // the server's timezone isn't UTC.
   const now = new Date();
   const currentMonth = now.getMonth() + 1;
+  const currentDay = now.getDate();
   const { data: allMembers } = await supabase
     .from("members")
-    .select("full_name, photo_url, date_of_birth")
+    .select("id, full_name, photo_url, date_of_birth")
     .not("date_of_birth", "is", null);
+
+  function monthDayOf(dateStr: string): [number, number] {
+    const [, month, day] = dateStr.split("-").map(Number);
+    return [month, day];
+  }
 
   const birthdayMembers = (allMembers || []).filter((m) => {
     if (!m.date_of_birth) return false;
-    const dob = new Date(m.date_of_birth);
-    return dob.getMonth() + 1 === currentMonth;
+    const [month] = monthDayOf(m.date_of_birth);
+    return month === currentMonth;
+  });
+
+  // Celebrants whose birthday is today (there can be more than one)
+  const todaysCelebrants = birthdayMembers.filter((m) => {
+    const [, day] = monthDayOf(m.date_of_birth!);
+    return day === currentDay;
   });
 
   // Recent announcements
@@ -113,6 +136,21 @@ export default async function DashboardPage() {
             </CardContent>
           </Card>
         </Link>
+      )}
+
+      {/* Today's Birthday Spotlight - one card per celebrant, if any */}
+      {todaysCelebrants.length > 0 && (
+        <div className="mt-6 space-y-4">
+          {todaysCelebrants.map((celebrant) => (
+            <BirthdaySpotlight
+              key={celebrant.id}
+              celebrantId={celebrant.id}
+              celebrantName={celebrant.full_name}
+              celebrantPhoto={celebrant.photo_url}
+              currentUserId={user!.id}
+            />
+          ))}
+        </div>
       )}
 
       {/* Quick Stats */}
@@ -188,8 +226,8 @@ export default async function DashboardPage() {
                     .join("")
                     .toUpperCase()
                     .slice(0, 2);
-                  const day = new Date(bm.date_of_birth!).getDate();
-                  const monthName = new Date(bm.date_of_birth!).toLocaleDateString("en-GB", { month: "short" });
+                  const [bmMonth, day] = monthDayOf(bm.date_of_birth!);
+                  const monthName = MONTH_ABBREVIATIONS[bmMonth - 1];
                   return (
                     <div key={i} className="flex items-center gap-3">
                       <Avatar className="h-8 w-8 border border-sb-gold/20">
@@ -286,11 +324,11 @@ export default async function DashboardPage() {
                 {upcomingEvents.map((ev) => (
                   <Link key={ev.id} href={`/dashboard/events/${ev.id}`}>
                     <div className="flex items-center gap-3 rounded-md p-2 transition-colors hover:bg-sb-cream">
-                      <div className="flex h-10 w-10 flex-col items-center justify-center rounded-lg bg-sb-green/8 text-sb-green">
-                        <span className="text-xs font-bold leading-none">
+                      <div className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-lg bg-sb-green-dark shadow-sm">
+                        <span className="text-base font-bold leading-none text-sb-gold">
                           {new Date(ev.event_date).getDate()}
                         </span>
-                        <span className="text-[9px] uppercase">
+                        <span className="mt-0.5 text-[9px] uppercase tracking-wide text-white/70">
                           {new Date(ev.event_date).toLocaleDateString("en-GB", { month: "short" })}
                         </span>
                       </div>

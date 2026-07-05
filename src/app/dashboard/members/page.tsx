@@ -46,6 +46,7 @@ export default async function MembersPage() {
       <MemberSearch
         members={members || []}
         isLeaderOrAdmin={isLeaderOrAdmin}
+        currentUserId={user!.id}
       />
     </div>
   );

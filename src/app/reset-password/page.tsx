@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,10 +12,86 @@ import { BlurFade } from "@/components/ui/blur-fade";
 import { Loader2, KeyRound, AlertCircle, CheckCircle2 } from "lucide-react";
 
 export default function ResetPasswordPage() {
+  return (
+    <Suspense>
+      <ResetPasswordForm />
+    </Suspense>
+  );
+}
+
+function ResetPasswordForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const [checking, setChecking] = useState(true);
+  const [sessionReady, setSessionReady] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+
+  // The reset link can hand off the session in a few ways depending on how
+  // Supabase issued it: a `token_hash` + `type` query param (from our own
+  // customized email template - needs an explicit verifyOtp call), a `code`
+  // query param (PKCE - needs an explicit exchange), or an #access_token=...
+  // URL fragment (picked up automatically by the Supabase client). We handle
+  // all three rather than assuming one.
+  useEffect(() => {
+    const supabase = createClient();
+    let cancelled = false;
+
+    const tokenHash = searchParams.get("token_hash");
+    const type = searchParams.get("type");
+    if (tokenHash && type === "recovery") {
+      supabase.auth
+        .verifyOtp({ token_hash: tokenHash, type: "recovery" })
+        .then(({ error: verifyError }) => {
+          if (cancelled) return;
+          if (!verifyError) {
+            setSessionReady(true);
+          }
+          setChecking(false);
+        });
+    }
+
+    const code = searchParams.get("code");
+    if (code) {
+      supabase.auth.exchangeCodeForSession(code).then(({ error: exchangeError }) => {
+        if (cancelled) return;
+        if (!exchangeError) {
+          setSessionReady(true);
+        }
+        setChecking(false);
+      });
+    }
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!cancelled && session) {
+        setSessionReady(true);
+        setChecking(false);
+      }
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "PASSWORD_RECOVERY" && session) {
+        setSessionReady(true);
+        setChecking(false);
+      }
+    });
+
+    // If nothing established a session after a few seconds, the link is
+    // invalid, expired, or already used
+    const timeout = setTimeout(() => {
+      if (!cancelled) setChecking(false);
+    }, 4000);
+
+    return () => {
+      cancelled = true;
+      subscription.unsubscribe();
+      clearTimeout(timeout);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -86,7 +162,14 @@ export default function ResetPasswordPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {success ? (
+              {checking ? (
+                <div className="flex flex-col items-center gap-3 py-6">
+                  <Loader2 className="h-6 w-6 animate-spin text-sb-green" />
+                  <p className="text-sm text-muted-foreground">
+                    Verifying your reset link...
+                  </p>
+                </div>
+              ) : success ? (
                 <div className="text-center py-4">
                   <CheckCircle2 className="mx-auto h-10 w-10 text-sb-green" />
                   <h3 className="mt-3 text-sm font-semibold text-sb-green-dark">
@@ -95,6 +178,23 @@ export default function ResetPasswordPage() {
                   <p className="mt-2 text-sm text-muted-foreground">
                     Your password has been changed. Redirecting to dashboard...
                   </p>
+                </div>
+              ) : !sessionReady ? (
+                <div className="text-center py-4">
+                  <AlertCircle className="mx-auto h-10 w-10 text-red-500" />
+                  <h3 className="mt-3 text-sm font-semibold text-sb-green-dark">
+                    Link expired or already used
+                  </h3>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    This password reset link is no longer valid. Please
+                    request a new one.
+                  </p>
+                  <Button
+                    onClick={() => router.push("/forgot-password")}
+                    className="mt-4 bg-sb-green text-white hover:bg-sb-green-light"
+                  >
+                    Request a new link
+                  </Button>
                 </div>
               ) : (
                 <>

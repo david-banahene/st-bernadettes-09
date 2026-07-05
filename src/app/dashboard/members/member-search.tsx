@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { MapPin, Search } from "lucide-react";
+import { MapPin, MessageSquare, Search } from "lucide-react";
 import { MemberDetailPanel } from "./member-detail-panel";
 
 type Member = {
@@ -25,9 +26,10 @@ type Member = {
 type Props = {
   members: Member[];
   isLeaderOrAdmin: boolean;
+  currentUserId: string;
 };
 
-export function MemberSearch({ members, isLeaderOrAdmin }: Props) {
+export function MemberSearch({ members, isLeaderOrAdmin, currentUserId }: Props) {
   const [search, setSearch] = useState("");
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
 
@@ -101,6 +103,16 @@ export function MemberSearch({ members, isLeaderOrAdmin }: Props) {
                   </Badge>
                 </div>
               </div>
+              {member.id !== currentUserId && (
+                <Link
+                  href={`/dashboard/messages/${member.id}`}
+                  onClick={(e) => e.stopPropagation()}
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-sb-green/8 text-sb-green transition-colors hover:bg-sb-green/15"
+                  aria-label={`Message ${member.full_name}`}
+                >
+                  <MessageSquare className="h-4 w-4" />
+                </Link>
+              )}
             </CardContent>
           </Card>
         ))}

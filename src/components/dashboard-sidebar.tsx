@@ -12,6 +12,7 @@ import {
   Users,
   CalendarDays,
   MessageCircle,
+  MessageSquare,
   Heart,
   Megaphone,
   BookOpen,
@@ -24,6 +25,7 @@ import {
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useBadgeNotifications } from "@/hooks/use-badge-notifications";
+import { useUnreadMessages } from "@/hooks/use-unread-messages";
 
 type Props = {
   memberName: string;
@@ -38,6 +40,7 @@ const memberLinks = [
   { href: "/dashboard/profile", icon: User, label: "My Profile" },
   { href: "/dashboard/members", icon: Users, label: "Members" },
   { href: "/dashboard/events", icon: CalendarDays, label: "Events" },
+  { href: "/dashboard/messages", icon: MessageSquare, label: "Messages" },
   { href: "/dashboard/questions", icon: MessageCircle, label: "Questions" },
   { href: "/dashboard/welfare", icon: Heart, label: "Welfare" },
   { href: "/dashboard/announcements", icon: Megaphone, label: "Announcements" },
@@ -59,6 +62,7 @@ const bottomTabs = [
 // Items that go inside the "More" sheet
 const moreLinks = [
   { href: "/dashboard/profile", icon: User, label: "My Profile" },
+  { href: "/dashboard/messages", icon: MessageSquare, label: "Messages" },
   { href: "/dashboard/questions", icon: MessageCircle, label: "Questions" },
   { href: "/dashboard/welfare", icon: Heart, label: "Welfare" },
   { href: "/dashboard/minutes", icon: BookOpen, label: "Minutes" },
@@ -79,6 +83,11 @@ export function DashboardSidebar({
 
   // Notification badge dots
   const { hasBadge, hasMoreBadge } = useBadgeNotifications(pathname);
+  // Messages badges come from actual unread message counts, not the
+  // generic content_updates system (which assumes shared, not private, content)
+  const { unreadCount } = useUnreadMessages(pathname);
+  const showDot = (href: string) =>
+    href === "/dashboard/messages" ? unreadCount > 0 : hasBadge(href);
 
   // Close "More" sheet when navigating
   useEffect(() => {
@@ -179,7 +188,7 @@ export function DashboardSidebar({
                 )}
               />
               {/* Badge dot if any "More" section has new content */}
-              {hasMoreBadge() && (
+              {(hasMoreBadge() || unreadCount > 0) && (
                 <span className="absolute -top-0.5 right-2 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-sb-green-dark" />
               )}
             </span>
@@ -249,12 +258,12 @@ export function DashboardSidebar({
                     >
                       <div className="relative">
                         <link.icon className="h-5 w-5 shrink-0" />
-                        {hasBadge(link.href) && (
+                        {showDot(link.href) && (
                           <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-red-500" />
                         )}
                       </div>
                       <span className="flex-1">{link.label}</span>
-                      {hasBadge(link.href) && (
+                      {showDot(link.href) && (
                         <span className="h-2 w-2 rounded-full bg-red-500" />
                       )}
                     </div>
@@ -359,7 +368,7 @@ export function DashboardSidebar({
                   >
                     <div className="relative">
                       <link.icon className="h-4 w-4 shrink-0" />
-                      {hasBadge(link.href) && (
+                      {showDot(link.href) && (
                         <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-red-500" />
                       )}
                     </div>

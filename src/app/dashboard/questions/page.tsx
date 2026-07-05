@@ -63,7 +63,7 @@ export default function QuestionsPage() {
   const [replyText, setReplyText] = useState("");
   const [replying, setReplying] = useState<string | null>(null);
   const [members, setMembers] = useState<MemberOption[]>([]);
-  const [sendTo, setSendTo] = useState("leadership");
+  const [sendTo, setSendTo] = useState("all");
 
   useEffect(() => {
     loadData();
@@ -123,10 +123,13 @@ export default function QuestionsPage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
+    const rawSubject = (formData.get("subject") as string)?.trim();
+    const message = formData.get("message") as string;
+
     const insertData: Record<string, unknown> = {
       asked_by: user.id,
-      subject: formData.get("subject") as string,
-      message: formData.get("message") as string,
+      subject: rawSubject || message.slice(0, 50),
+      message,
       is_broadcast: false,
       asked_to: null,
     };
@@ -134,7 +137,7 @@ export default function QuestionsPage() {
     if (isLeaderOrAdmin) {
       if (sendTo === "all") {
         insertData.is_broadcast = true;
-      } else if (sendTo !== "leadership") {
+      } else {
         insertData.asked_to = sendTo;
       }
     }
@@ -153,7 +156,7 @@ export default function QuestionsPage() {
     toast.success("Question submitted");
     setShowForm(false);
     setSubmitting(false);
-    setSendTo("leadership");
+    setSendTo("all");
     await loadData();
   }
 
@@ -271,8 +274,7 @@ export default function QuestionsPage() {
               <div>
                 <Input
                   name="subject"
-                  required
-                  placeholder="Subject (e.g., Question about dues)"
+                  placeholder="Subject (optional)"
                 />
               </div>
               <div>
@@ -302,7 +304,7 @@ export default function QuestionsPage() {
                   variant="outline"
                   onClick={() => {
                     setShowForm(false);
-                    setSendTo("leadership");
+                    setSendTo("all");
                   }}
                 >
                   Cancel

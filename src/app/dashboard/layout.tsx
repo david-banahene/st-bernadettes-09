@@ -5,6 +5,7 @@ import { PaymentWall } from "@/components/payment-wall";
 import { AgreementWall } from "@/components/agreement-wall";
 import { MembershipJourney } from "@/components/membership-journey";
 import { Toaster } from "@/components/ui/sonner";
+import { ShieldAlert } from "lucide-react";
 
 // This layout wraps all /dashboard pages. It checks if the user is
 // authenticated and loads their member profile for the sidebar.
@@ -38,6 +39,7 @@ export default async function DashboardLayout({
   // Admin is always exempt (needs full access to manage the app)
   const isAdmin = member?.role === "admin";
   const isApproved = member?.membership_status === "active" || member?.membership_status === "restricted";
+  const isSuspended = !isAdmin && member?.membership_status === "suspended";
   const needsAgreement = !isAdmin && isApproved && !member?.signed_agreement_at;
 
   // Determine if the payment wall should show (only after agreement is signed)
@@ -82,8 +84,24 @@ export default async function DashboardLayout({
 
   return (
     <div className="flex min-h-[calc(100vh-4rem)]">
+      {/* Suspended - blocks everything, takes priority over every other gate */}
+      {isSuspended && (
+        <div className="flex flex-1 items-center justify-center p-6">
+          <div className="max-w-md rounded-xl border border-red-200 bg-white p-8 text-center shadow-sm">
+            <ShieldAlert className="mx-auto h-10 w-10 text-red-500" />
+            <h2 className="mt-4 font-heading text-xl font-bold text-red-600">
+              Account Suspended
+            </h2>
+            <p className="mt-3 text-sm text-muted-foreground">
+              Your membership has been suspended. Please contact an
+              association admin to resolve this before regaining access.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Agreement Wall - blocks everything until member signs the constitution */}
-      {needsAgreement && (
+      {!isSuspended && needsAgreement && (
         <AgreementWall
           memberId={user.id}
           memberName={member?.full_name || "Member"}
@@ -91,7 +109,7 @@ export default async function DashboardLayout({
       )}
 
       {/* Payment Wall - blocks everything if member has unpaid obligations */}
-      {!needsAgreement && showPaymentWall && (
+      {!isSuspended && !needsAgreement && showPaymentWall && (
         <PaymentWall
           memberId={user.id}
           memberName={member?.full_name || "Member"}
@@ -100,7 +118,7 @@ export default async function DashboardLayout({
         />
       )}
 
-      {!needsAgreement && !showPaymentWall && (
+      {!isSuspended && !needsAgreement && !showPaymentWall && (
         <>
           <DashboardSidebar
             memberName={member?.full_name || "Member"}
