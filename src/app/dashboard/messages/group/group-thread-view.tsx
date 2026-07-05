@@ -5,7 +5,6 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -24,15 +23,16 @@ import {
   Pencil,
   Reply,
   Send,
+  ShieldAlert,
   Trash2,
+  Users,
   X,
 } from "lucide-react";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 
-interface Message {
+interface GroupMessage {
   id: string;
   sender_id: string;
-  recipient_id: string;
   content: string | null;
   created_at: string;
   edited_at: string | null;
@@ -41,8 +41,28 @@ interface Message {
   reply_to_id: string | null;
 }
 
-const MESSAGE_COLUMNS =
-  "id, sender_id, recipient_id, content, created_at, edited_at, deleted_at, deleted_by, reply_to_id";
+interface MemberInfo {
+  full_name: string;
+  photo_url: string | null;
+}
+
+const GROUP_MESSAGE_COLUMNS =
+  "id, sender_id, content, created_at, edited_at, deleted_at, deleted_by, reply_to_id";
+
+// Deterministic per-sender name color, in the spirit of how WhatsApp/Slack
+// give each group participant a consistent color: hash their (stable) id to
+// a hue, keep saturation/lightness fixed so every color stays legible on the
+// cream background, and steer clear of the hue this app already uses for
+// its gold reply/accent color so a name never reads as "the accent."
+function colorForSender(id: string): string {
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) {
+    hash = id.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  let hue = Math.abs(hash) % 360;
+  if (hue >= 30 && hue <= 55) hue = (hue + 60) % 360;
+  return `hsl(${hue} 55% 32%)`;
+}
 
 function dayLabel(dateStr: string): string {
   const date = new Date(dateStr);
@@ -59,62 +79,64 @@ function dayLabel(dateStr: string): string {
   });
 }
 
-export function ThreadView({
+export function GroupThreadView({
   currentUserId,
-  otherId,
-  otherName,
-  otherPhoto,
+  isAdmin,
 }: {
   currentUserId: string;
-  otherId: string;
-  otherName: string;
-  otherPhoto: string | null;
+  isAdmin: boolean;
 }) {
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<GroupMessage[]>([]);
+  const [members, setMembers] = useState<Map<string, MemberInfo>>(new Map());
   const [loading, setLoading] = useState(true);
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
-  const [replyingTo, setReplyingTo] = useState<Message | null>(null);
+  const [replyingTo, setReplyingTo] = useState<GroupMessage | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState("");
-  const [unsendTarget, setUnsendTarget] = useState<Message | null>(null);
+  const [confirmTarget, setConfirmTarget] = useState<{
+    message: GroupMessage;
+    mode: "unsend" | "admin-delete";
+  } | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const prevCountRef = useRef(0);
 
-  const loadThread = useCallback(async () => {
-    const supabase = createClient();
-    const { data } = await supabase
-      .from("messages")
-      .select(MESSAGE_COLUMNS)
-      .or(
-        `and(sender_id.eq.${currentUserId},recipient_id.eq.${otherId}),and(sender_id.eq.${otherId},recipient_id.eq.${currentUserId})`
-      )
-      .order("created_at", { ascending: true });
+  const nameFor = useCallback(
+    (id: string) => (id === currentUserId ? "You" : members.get(id)?.full_name || "Member"),
+    [currentUserId, members]
+  );
+  const firstNameFor = useCallback(
+    (id: string) => {
+      const full = members.get(id)?.full_name;
+      return full ? full.split(" ")[0] : "a member";
+    },
+    [members]
+  );
 
-    setMessages(data || []);
+  const loadRoom = useCallback(async () => {
+    const supabase = createClient();
+    const [{ data: msgs }, { data: allMembers }] = await Promise.all([
+      supabase
+        .from("group_messages")
+        .select(GROUP_MESSAGE_COLUMNS)
+        .order("created_at", { ascending: true })
+        .limit(200),
+      supabase.from("members").select("id, full_name, photo_url"),
+    ]);
+
+    setMessages(msgs || []);
+    setMembers(
+      new Map((allMembers || []).map((m) => [m.id, { full_name: m.full_name, photo_url: m.photo_url }]))
+    );
     setLoading(false);
-  }, [currentUserId, otherId]);
-
-  const markAsRead = useCallback(async () => {
-    const supabase = createClient();
-    await supabase
-      .from("messages")
-      .update({ read_at: new Date().toISOString() })
-      .eq("sender_id", otherId)
-      .eq("recipient_id", currentUserId)
-      .is("read_at", null);
-  }, [currentUserId, otherId]);
+  }, []);
 
   useEffect(() => {
-    loadThread();
-    markAsRead();
-  }, [loadThread, markAsRead]);
+    loadRoom();
+  }, [loadRoom]);
 
-  // Scroll only the messages panel itself, never the outer page - scoping
-  // this to the container's own scrollTop avoids scrollIntoView bubbling the
-  // scroll up to ancestor containers (which was dragging the whole page down
-  // to the site footer). Only auto-scroll on genuine new messages, not on
-  // in-place edits/unsends of older messages elsewhere in the thread.
+  // Only auto-scroll on genuine new messages, not on in-place edits/unsends
+  // of older messages elsewhere in the room.
   useEffect(() => {
     const el = scrollRef.current;
     if (el && messages.length > prevCountRef.current) {
@@ -123,46 +145,47 @@ export function ThreadView({
     prevCountRef.current = messages.length;
   }, [messages]);
 
-  // One realtime subscription for messages sent to me; only ones from the
-  // person in this thread get appended/updated here (others just feed the
-  // nav badge). Covers both new sends (INSERT) and edits/unsends (UPDATE) of
-  // messages the other person sent - my own edits/unsends are applied
-  // optimistically right after their RPC call succeeds instead.
+  // Keep the read cursor current while the room is open, not just once on
+  // arrival - the generic badge system's own auto-mark-as-read only fires on
+  // navigation (path change), so without this, messages that arrive while
+  // someone is already sitting in the room would incorrectly still show as
+  // "unread" the next time they check the inbox, even though they saw them.
+  useEffect(() => {
+    if (loading || messages.length === 0) return;
+    const supabase = createClient();
+    supabase
+      .from("user_section_reads")
+      .upsert(
+        { user_id: currentUserId, section: "group-chat", last_read_at: new Date().toISOString() },
+        { onConflict: "user_id,section" }
+      )
+      .then(() => {});
+  }, [messages, loading, currentUserId]);
+
+  // One shared, unfiltered realtime channel - everyone reads every message,
+  // so (unlike the 1:1 thread) there's no per-recipient filter to scope
+  // this to. Merging by id keeps this idempotent against the sender's own
+  // optimistic update, which also echoes back through this same channel.
   useEffect(() => {
     const supabase = createClient();
     const channel: RealtimeChannel = supabase
-      .channel(`thread-${otherId}`)
+      .channel("group-chat-messages")
       .on(
         "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "messages",
-          filter: `recipient_id=eq.${currentUserId}`,
-        },
+        { event: "INSERT", schema: "public", table: "group_messages" },
         (payload) => {
-          const incoming = payload.new as Message;
-          if (incoming.sender_id === otherId) {
-            setMessages((prev) => [...prev, incoming]);
-            markAsRead();
-          }
+          const incoming = payload.new as GroupMessage;
+          setMessages((prev) =>
+            prev.some((m) => m.id === incoming.id) ? prev : [...prev, incoming]
+          );
         }
       )
       .on(
         "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "messages",
-          filter: `recipient_id=eq.${currentUserId}`,
-        },
+        { event: "UPDATE", schema: "public", table: "group_messages" },
         (payload) => {
-          const updated = payload.new as Message;
-          if (updated.sender_id === otherId) {
-            setMessages((prev) =>
-              prev.map((m) => (m.id === updated.id ? updated : m))
-            );
-          }
+          const updated = payload.new as GroupMessage;
+          setMessages((prev) => prev.map((m) => (m.id === updated.id ? updated : m)));
         }
       )
       .subscribe();
@@ -170,7 +193,7 @@ export function ThreadView({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [otherId, currentUserId, markAsRead]);
+  }, []);
 
   async function handleSend() {
     const content = draft.trim();
@@ -182,18 +205,13 @@ export function ThreadView({
 
     const supabase = createClient();
     const { data, error } = await supabase
-      .from("messages")
-      .insert({
-        sender_id: currentUserId,
-        recipient_id: otherId,
-        content,
-        reply_to_id: replyId,
-      })
-      .select(MESSAGE_COLUMNS)
+      .from("group_messages")
+      .insert({ sender_id: currentUserId, content, reply_to_id: replyId })
+      .select(GROUP_MESSAGE_COLUMNS)
       .single();
 
     if (!error && data) {
-      setMessages((prev) => [...prev, data]);
+      setMessages((prev) => (prev.some((m) => m.id === data.id) ? prev : [...prev, data]));
     } else {
       toast.error("Could not send your message");
     }
@@ -206,49 +224,41 @@ export function ThreadView({
 
     const supabase = createClient();
     const { data, error } = await supabase
-      .rpc("edit_direct_message", {
-        p_message_id: messageId,
-        p_new_content: content,
-      })
-      .select(MESSAGE_COLUMNS)
+      .rpc("edit_group_message", { p_message_id: messageId, p_new_content: content })
+      .select(GROUP_MESSAGE_COLUMNS)
       .single();
 
     if (error || !data) {
       toast.error("Could not save your edit");
     } else {
-      setMessages((prev) =>
-        prev.map((m) => (m.id === messageId ? (data as Message) : m))
-      );
+      setMessages((prev) => prev.map((m) => (m.id === messageId ? (data as GroupMessage) : m)));
       setEditingId(null);
       setEditDraft("");
     }
   }
 
-  async function handleUnsendConfirm() {
-    if (!unsendTarget) return;
-    const target = unsendTarget;
-    setUnsendTarget(null);
+  async function handleConfirmedDelete() {
+    if (!confirmTarget) return;
+    const { message, mode } = confirmTarget;
+    setConfirmTarget(null);
 
     const supabase = createClient();
+    const rpcName = mode === "admin-delete" ? "admin_delete_group_message" : "unsend_group_message";
     const { data, error } = await supabase
-      .rpc("unsend_direct_message", { p_message_id: target.id })
-      .select(MESSAGE_COLUMNS)
+      .rpc(rpcName, { p_message_id: message.id })
+      .select(GROUP_MESSAGE_COLUMNS)
       .single();
 
     if (error || !data) {
-      toast.error("Could not unsend this message");
+      toast.error(mode === "admin-delete" ? "Could not remove this message" : "Could not unsend this message");
     } else {
-      setMessages((prev) =>
-        prev.map((m) => (m.id === target.id ? (data as Message) : m))
-      );
+      setMessages((prev) => prev.map((m) => (m.id === message.id ? (data as GroupMessage) : m)));
     }
   }
 
   function jumpToMessage(id: string) {
     const container = scrollRef.current;
-    const target = container?.querySelector<HTMLElement>(
-      `[data-message-id="${id}"]`
-    );
+    const target = container?.querySelector<HTMLElement>(`[data-message-id="${id}"]`);
     if (container && target) {
       container.scrollTop =
         target.offsetTop - container.clientHeight / 2 + target.clientHeight / 2;
@@ -256,13 +266,6 @@ export function ThreadView({
       setTimeout(() => target.classList.remove("ring-2", "ring-sb-gold"), 1200);
     }
   }
-
-  const initials = otherName
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
 
   return (
     <div className="flex h-[calc(100vh-8rem)] flex-col overflow-hidden rounded-xl border border-sb-cream-dark bg-white shadow-sm md:h-[calc(100vh-6rem)]">
@@ -274,15 +277,13 @@ export function ThreadView({
         >
           <ArrowLeft className="h-4 w-4" />
         </Link>
-        <Avatar className="h-9 w-9 border border-sb-gold/20">
-          {otherPhoto && <AvatarImage src={otherPhoto} alt={otherName} />}
-          <AvatarFallback className="bg-sb-green text-xs font-semibold text-sb-gold">
-            {initials}
-          </AvatarFallback>
-        </Avatar>
-        <p className="font-heading text-base font-bold text-sb-green-dark">
-          {otherName}
-        </p>
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-sb-gold/15 text-sb-gold-dark">
+          <Users className="h-4 w-4" />
+        </div>
+        <div>
+          <p className="font-heading text-base font-bold text-sb-green-dark">The Common Room</p>
+          <p className="text-[11px] text-muted-foreground">Everyone in the association</p>
+        </div>
       </div>
 
       {/* Messages */}
@@ -293,15 +294,10 @@ export function ThreadView({
           </div>
         ) : messages.length === 0 ? (
           <div className="flex flex-col items-center gap-2 py-16 text-center">
-            <Avatar className="h-14 w-14 border border-sb-gold/20 opacity-80">
-              {otherPhoto && <AvatarImage src={otherPhoto} alt={otherName} />}
-              <AvatarFallback className="bg-sb-green text-sm font-semibold text-sb-gold">
-                {initials}
-              </AvatarFallback>
-            </Avatar>
-            <p className="text-sm text-muted-foreground">
-              Say hello to {otherName.split(" ")[0]}.
-            </p>
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-sb-gold/15">
+              <Users className="h-6 w-6 text-sb-gold-dark" />
+            </div>
+            <p className="text-sm text-muted-foreground">Be the first to say hello.</p>
           </div>
         ) : (
           <div>
@@ -311,6 +307,7 @@ export function ThreadView({
               const next = messages[i + 1];
               const isDeleted = !!m.deleted_at;
               const isEditing = editingId === m.id;
+              const canAdminDelete = isAdmin && !isMine && !isDeleted;
 
               const sameDayAsPrev =
                 prev && new Date(prev.created_at).toDateString() === new Date(m.created_at).toDateString();
@@ -325,17 +322,19 @@ export function ThreadView({
                   new Date(next.created_at).toDateString() === new Date(m.created_at).toDateString()
               );
 
-              const parent = m.reply_to_id
-                ? messages.find((x) => x.id === m.reply_to_id)
-                : undefined;
+              const parent = m.reply_to_id ? messages.find((x) => x.id === m.reply_to_id) : undefined;
               const parentUnavailable = !!m.reply_to_id && (!parent || !!parent.deleted_at);
 
+              const deletedText = isDeleted
+                ? m.deleted_by
+                  ? "This message was removed by an admin"
+                  : isMine
+                    ? "You deleted this message"
+                    : `${firstNameFor(m.sender_id)} deleted this message`
+                : null;
+
               const actionRow = !isDeleted && !isEditing && (
-                <div
-                  className={cn(
-                    "flex items-center gap-0.5 pb-1 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100"
-                  )}
-                >
+                <div className="flex items-center gap-0.5 pb-1 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100">
                   <button
                     type="button"
                     onClick={() => setReplyingTo(m)}
@@ -359,13 +358,23 @@ export function ThreadView({
                       </button>
                       <button
                         type="button"
-                        onClick={() => setUnsendTarget(m)}
+                        onClick={() => setConfirmTarget({ message: m, mode: "unsend" })}
                         title="Unsend"
                         className="rounded-full p-1.5 text-muted-foreground hover:bg-white hover:text-red-600"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
                     </>
+                  )}
+                  {canAdminDelete && (
+                    <button
+                      type="button"
+                      onClick={() => setConfirmTarget({ message: m, mode: "admin-delete" })}
+                      title="Remove for everyone (admin)"
+                      className="rounded-full p-1.5 text-red-500/70 hover:bg-red-50 hover:text-red-600"
+                    >
+                      <ShieldAlert className="h-3.5 w-3.5" />
+                    </button>
                   )}
                 </div>
               );
@@ -379,33 +388,32 @@ export function ThreadView({
                       </span>
                     </div>
                   )}
+                  {!isMine && !isGroupedWithPrev && (
+                    <p
+                      className="mt-3 mb-0.5 ml-1 text-[11px] font-semibold"
+                      style={{ color: colorForSender(m.sender_id) }}
+                    >
+                      {nameFor(m.sender_id)}
+                    </p>
+                  )}
                   <div
                     className={cn(
                       "group flex items-end gap-1",
                       isMine ? "justify-end" : "justify-start",
-                      isGroupedWithPrev ? "mt-1" : "mt-3"
+                      isGroupedWithPrev ? "mt-1" : isMine ? "mt-3" : "mt-0.5"
                     )}
                   >
                     {isMine && actionRow}
                     <div
                       className={cn(
                         "max-w-[75%] px-4 py-2 text-sm shadow-sm transition-shadow",
-                        // One consistent shape per message - a permanent
-                        // sharp corner on the sender's trailing edge acts as
-                        // the bubble "tail", the same convention used by
-                        // WhatsApp/iMessage/Telegram (and shadcn's own chat
-                        // components): sent bubbles stay square at
-                        // bottom-right, received bubbles stay square at
-                        // bottom-left, every time - no grouping logic needed.
                         isMine
                           ? "rounded-l-2xl rounded-tr-2xl border border-sb-gold/50 bg-sb-cream-dark text-sb-green-dark"
                           : "rounded-r-2xl rounded-tl-2xl bg-white text-sb-green-dark"
                       )}
                     >
                       {isDeleted ? (
-                        <p className="italic text-muted-foreground">
-                          {isMine ? "You deleted this message" : "This message was deleted"}
-                        </p>
+                        <p className="italic text-muted-foreground">{deletedText}</p>
                       ) : isEditing ? (
                         <div className="flex flex-col gap-1.5">
                           <textarea
@@ -445,9 +453,7 @@ export function ThreadView({
                           {m.reply_to_id && (
                             <button
                               type="button"
-                              onClick={() =>
-                                !parentUnavailable && jumpToMessage(m.reply_to_id!)
-                              }
+                              onClick={() => !parentUnavailable && jumpToMessage(m.reply_to_id!)}
                               className={cn(
                                 "mb-1 block w-full rounded-lg border-l-2 border-sb-gold px-2 py-1 text-left text-xs",
                                 isMine ? "bg-white" : "bg-sb-cream-dark"
@@ -457,11 +463,7 @@ export function ThreadView({
                                 <span className="text-sb-green-dark/70">Original message unavailable</span>
                               ) : (
                                 <>
-                                  <span className="font-semibold text-sb-gold-dark">
-                                    {parent!.sender_id === currentUserId
-                                      ? "You"
-                                      : otherName.split(" ")[0]}
-                                  </span>
+                                  <span className="font-semibold text-sb-gold-dark">{nameFor(parent!.sender_id)}</span>
                                   {": "}
                                   <span className="line-clamp-1 text-sb-green-dark/70">{parent!.content}</span>
                                 </>
@@ -498,7 +500,7 @@ export function ThreadView({
           <div className="h-8 w-0.5 shrink-0 rounded-full bg-sb-gold" />
           <div className="min-w-0 flex-1">
             <p className="text-xs font-semibold text-sb-green-dark">
-              Replying to {replyingTo.sender_id === currentUserId ? "yourself" : otherName.split(" ")[0]}
+              Replying to {nameFor(replyingTo.sender_id)}
             </p>
             <p className="truncate text-xs text-muted-foreground">
               {replyingTo.deleted_at ? "Message unavailable" : replyingTo.content}
@@ -519,7 +521,7 @@ export function ThreadView({
         <input
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
-          placeholder="Type a message..."
+          placeholder="Message The Common Room..."
           className="flex-1 rounded-full border border-input bg-background px-4 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           onKeyDown={(e) => {
             if (e.key === "Enter") handleSend();
@@ -530,29 +532,29 @@ export function ThreadView({
           disabled={sending || !draft.trim()}
           className="rounded-full bg-sb-green text-white hover:bg-sb-green-light"
         >
-          {sending ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Send className="h-4 w-4" />
-          )}
+          {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
         </Button>
       </div>
 
       <AlertDialog
-        open={!!unsendTarget}
-        onOpenChange={(open) => !open && setUnsendTarget(null)}
+        open={!!confirmTarget}
+        onOpenChange={(open) => !open && setConfirmTarget(null)}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Unsend this message?</AlertDialogTitle>
+            <AlertDialogTitle>
+              {confirmTarget?.mode === "admin-delete" ? "Remove this message?" : "Unsend this message?"}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              This removes the message for both you and {otherName.split(" ")[0]}. This can&apos;t be undone.
+              {confirmTarget?.mode === "admin-delete"
+                ? "This removes the message for everyone in The Common Room. This can't be undone."
+                : "This removes the message for everyone in The Common Room. This can't be undone."}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction variant="destructive" onClick={handleUnsendConfirm}>
-              Unsend
+            <AlertDialogAction variant="destructive" onClick={handleConfirmedDelete}>
+              {confirmTarget?.mode === "admin-delete" ? "Remove" : "Unsend"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

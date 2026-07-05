@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
+import type { RealtimeChannel } from "@supabase/supabase-js";
 
 export type BadgeSection =
   | "events"
@@ -10,7 +11,8 @@ export type BadgeSection =
   | "welfare"
   | "admin"
   | "minutes"
-  | "members";
+  | "members"
+  | "group-chat";
 
 const sectionPaths: Record<BadgeSection, string> = {
   events: "/dashboard/events",
@@ -20,6 +22,7 @@ const sectionPaths: Record<BadgeSection, string> = {
   admin: "/dashboard/admin",
   minutes: "/dashboard/minutes",
   members: "/dashboard/members",
+  "group-chat": "/dashboard/messages/group",
 };
 
 const pathToSection: Record<string, BadgeSection> = Object.fromEntries(
@@ -128,6 +131,39 @@ export function useBadgeNotifications(currentPath: string) {
     intervalRef.current = setInterval(fetchBadges, POLL_INTERVAL);
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, [fetchBadges]);
+
+  // Instant refresh on new group chat messages - a hardcoded one-off for
+  // this single section, not a generalization of the badge system into
+  // "realtime for every section" (Announcements/Events etc keep polling
+  // exactly as before). Worth it here specifically because instant delivery
+  // is this feature's whole pitch - a 30s-stale nav dot would visibly
+  // undercut that.
+  useEffect(() => {
+    const supabase = createClient();
+    let channel: RealtimeChannel | null = null;
+    let cancelled = false;
+
+    (async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user || cancelled) return;
+
+      channel = supabase
+        .channel(`group-chat-badge-${user.id}`)
+        .on(
+          "postgres_changes",
+          { event: "INSERT", schema: "public", table: "group_messages" },
+          () => fetchBadges()
+        )
+        .subscribe();
+    })();
+
+    return () => {
+      cancelled = true;
+      if (channel) supabase.removeChannel(channel);
     };
   }, [fetchBadges]);
 

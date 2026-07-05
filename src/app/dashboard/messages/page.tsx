@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { MessageSquare } from "lucide-react";
+import { MessageSquare, Users } from "lucide-react";
 
 interface RawMessage {
   sender_id: string;
@@ -75,6 +75,34 @@ export default async function MessagesPage() {
 
   const memberMap = new Map((otherMembers || []).map((m) => [m.id, m]));
 
+  // The Common Room preview: last message + unread flag computed from the
+  // generic content_updates/user_section_reads badge system (a group room's
+  // "anything new since I last looked" is a single shared timestamp, not a
+  // per-recipient count like private DMs).
+  const [{ data: lastGroupMsgRaw }, { data: groupUpdate }, { data: groupRead }] = await Promise.all([
+    supabase
+      .from("group_messages")
+      .select("content, created_at, sender:members!group_messages_sender_id_fkey(full_name)")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    supabase.from("content_updates").select("last_updated_at").eq("section", "group-chat").maybeSingle(),
+    supabase
+      .from("user_section_reads")
+      .select("last_read_at")
+      .eq("user_id", myId)
+      .eq("section", "group-chat")
+      .maybeSingle(),
+  ]);
+
+  const lastGroupMsg = lastGroupMsgRaw as unknown as
+    | { content: string | null; created_at: string; sender: { full_name: string } | null }
+    | null;
+
+  const groupHasUnread =
+    !!groupUpdate &&
+    (!groupRead || new Date(groupUpdate.last_updated_at) > new Date(groupRead.last_read_at));
+
   const inbox = otherIds
     .map((id) => ({
       id,
@@ -100,8 +128,61 @@ export default async function MessagesPage() {
         </div>
       </div>
 
+      <div className="mt-6">
+        <Link href="/dashboard/messages/group">
+          <Card className="border-sb-gold/30 bg-white transition-all duration-200 hover:-translate-y-0.5 hover:border-sb-gold/50 hover:shadow-md">
+            <CardContent className="flex items-center gap-3 py-3.5">
+              <Avatar className="h-12 w-12 shrink-0 border border-sb-gold/30 bg-sb-gold/15">
+                <AvatarFallback className="bg-sb-gold/15 text-sb-gold-dark">
+                  <Users className="h-5 w-5" />
+                </AvatarFallback>
+              </Avatar>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center justify-between gap-2">
+                  <p
+                    className={cn(
+                      "truncate text-sm text-sb-green-dark",
+                      groupHasUnread ? "font-bold" : "font-semibold"
+                    )}
+                  >
+                    The Common Room
+                  </p>
+                  {lastGroupMsg && (
+                    <span
+                      className={cn(
+                        "shrink-0 text-[11px]",
+                        groupHasUnread ? "font-semibold text-sb-green" : "text-muted-foreground"
+                      )}
+                    >
+                      {relativeTime(lastGroupMsg.created_at)}
+                    </span>
+                  )}
+                </div>
+                <div className="mt-0.5 flex items-center justify-between gap-2">
+                  <p
+                    className={cn(
+                      "truncate text-xs",
+                      groupHasUnread ? "font-medium text-sb-green-dark" : "text-muted-foreground"
+                    )}
+                  >
+                    {lastGroupMsg
+                      ? `${lastGroupMsg.sender?.full_name?.split(" ")[0] || "Member"}: ${lastGroupMsg.content || "Message removed"}`
+                      : "Be the first to say hello"}
+                  </p>
+                  {groupHasUnread && (
+                    <Badge className="shrink-0 rounded-full bg-sb-gold px-1.5 py-0 text-[10px] leading-5 text-sb-green-dark">
+                      New
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </Link>
+      </div>
+
       {inbox.length === 0 ? (
-        <Card className="mt-8 border-sb-cream-dark bg-white">
+        <Card className="mt-3 border-sb-cream-dark bg-white">
           <CardContent className="flex flex-col items-center gap-2 py-14 text-center">
             <div className="flex h-14 w-14 items-center justify-center rounded-full bg-sb-green/8">
               <MessageSquare className="h-6 w-6 text-sb-green" />
@@ -112,7 +193,7 @@ export default async function MessagesPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="mt-6 space-y-1.5">
+        <div className="mt-3 space-y-1.5">
           {inbox.map((c) => {
             const initials = c.name
               .split(" ")

@@ -87,7 +87,9 @@ export function DashboardSidebar({
   // generic content_updates system (which assumes shared, not private, content)
   const { unreadCount } = useUnreadMessages(pathname);
   const showDot = (href: string) =>
-    href === "/dashboard/messages" ? unreadCount > 0 : hasBadge(href);
+    href === "/dashboard/messages"
+      ? unreadCount > 0 || hasBadge("group-chat")
+      : hasBadge(href);
 
   // Close "More" sheet when navigating
   useEffect(() => {
@@ -188,7 +190,7 @@ export function DashboardSidebar({
                 )}
               />
               {/* Badge dot if any "More" section has new content */}
-              {(hasMoreBadge() || unreadCount > 0) && (
+              {(hasMoreBadge() || unreadCount > 0 || hasBadge("group-chat")) && (
                 <span className="absolute -top-0.5 right-2 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-sb-green-dark" />
               )}
             </span>
